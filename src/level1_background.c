@@ -1,7 +1,6 @@
 #include <gb/gb.h>
-#include "level1_tiles.c"               
-#include "level1_map.c"
-
+#include "tilesets/level1_tiles.c"               
+#include "tilemaps/level1_map.c"
 
 uint8_t timer,
         background_offset_1,

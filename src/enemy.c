@@ -19,7 +19,7 @@ void goToNode(struct Enemy * m, struct Node * n) {
     if ( m -> y < n -> y) { m -> y ++; }    // If monster y < node y. Move down.
 }
 
-void enemyInit(struct Enemy * m, uint8_t id, uint8_t x, uint8_t y, uint8_t sprite) {
+void enemyInit(struct Enemy * m, uint8_t id, uint8_t x, uint8_t y, uint8_t sprite, uint8_t h) {
     m -> active 		=	1;
     m -> x      		=	x;
     m -> startx 		=	x;
@@ -27,6 +27,7 @@ void enemyInit(struct Enemy * m, uint8_t id, uint8_t x, uint8_t y, uint8_t sprit
     m -> starty 		=	y;
     m -> id     		=	id;
 	m -> currentNode 	= 	0;
+    m -> health         =   h;
     set_sprite_tile(m -> id , sprite);
 }
 

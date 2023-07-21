@@ -22,14 +22,10 @@
 
 */
 
-#ifndef __sprites_h_INCLUDE
-#define __sprites_h_INCLUDE
 
 /* Bank of tiles. */
 #define spritesBank 0
 /* Start of tile array. */
-extern const unsigned char sprites[];
-
-#endif
+extern unsigned char sprites[];
 
 /* End of SPRITES.H */

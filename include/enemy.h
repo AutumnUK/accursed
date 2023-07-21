@@ -16,7 +16,8 @@ struct Enemy {
             y,
             starty,
             id,
-			currentNode;
+			currentNode,
+            health;
 
     BOOLEAN active;
 

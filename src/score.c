@@ -26,15 +26,15 @@ void scoreUpdate() {
     scoreDisplay(score100,   32, 24);
     scoreDisplay(score10,    33, 32);
     scoreDisplay(score1,     34, 40);
-	set_sprite_tile(35,100);
-	move_sprite(35,48,152);
+	set_sprite_tile (35,100);
+	move_sprite     (35,48,152);
     if (score1 >= 10) { score10 ++; score1 -= 10;}
 }
 
 void scoreInit() {
     score10000 = 0;
-    score1000 = 0;
-    score100 = 0;
-    score10 = 0;
-    score1 = 0;
+    score1000  = 0;
+    score100   = 0;
+    score10    = 0;
+    score1     = 0;
 }
