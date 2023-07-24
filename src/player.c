@@ -1,7 +1,7 @@
 #include <gb/gb.h>
 #include "../include/player.h"
 
-#define RELOAD      10
+#define RELOAD      20
 #define MIN_X       8
 #define MAX_X       160
 #define MIN_Y       16

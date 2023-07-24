@@ -17,73 +17,76 @@ Symbol Table
   7 __xinit__sprites                                               000F58 R
   7 __xinit__titleScreen                                           0005F0 R
   7 __xinit__titleSprites                                          000758 R
-  0 _activateEnemy                                                 0004D1 GR
+  0 _activateEnemy                                                 000180 GR
     _add_LCD                                                       ****** GX
-  1 _background_offset_1                                           00001B GR
-  1 _background_offset_2                                           00001C GR
-  1 _background_offset_3                                           00001D GR
-  0 _bulletUpdate                                                  00014E GR
-  1 _bullets                                                       000006 GR
-  0 _collision                                                     000788 GR
-  1 _currentBullet                                                 000000 GR
-  0 _deactivateEnemy                                               0004D8 GR
+  1 _background_offset_1                                           000001 GR
+  1 _background_offset_2                                           000002 GR
+  1 _background_offset_3                                           000003 GR
+  0 _bulletCollision                                               000797 GR
+  0 _bulletUpdate                                                  000594 GR
+  1 _bullets                                                       00014A GR
+  1 _currentBullet                                                 000144 GR
+  0 _deactivateEnemy                                               000187 GR
     _delay                                                         ****** GX
-  0 _enemyInit                                                     000504 GR
-  0 _enemyUpdate                                                   000554 GR
+  0 _enemyInit                                                     0001B3 GR
+  0 _enemyUpdate                                                   000203 GR
   1 _frame                                                         00015F GR
-  0 _game                                                          000BA0 GR
-  0 _generalUpdate                                                 0008B8 GR
-  0 _goToNode                                                      0004DF GR
-  0 _interruptLCD                                                  000351 GR
+  0 _game                                                          000CDA GR
+  0 _generalUpdate                                                 0009D9 GR
+  0 _goToNode                                                      00018E GR
+  0 _homingPattern                                                 0002F1 GR
+  0 _interruptLCD                                                  000000 GR
     _joypad                                                        ****** GX
-  0 _level1                                                        0008BE GR
-  0 _level1_bkg_init                                               000455 GR
-  0 _level1_bkg_update                                             000499 GR
+  0 _level1                                                        0009E5 GR
+  0 _level1_bkg_init                                               000104 GR
+  0 _level1_bkg_update                                             000148 GR
   2 _level1_map                                                    000000 GR
-  0 _level1_tiles                                                  000385 GR
-  0 _main                                                          000BC1 GR
-  0 _moveEnemy                                                     0004B9 GR
-  1 _player                                                        000002 GR
-  0 _playerInit                                                    000000 GR
-  0 _playerMovement                                                00008C GR
-  0 _playerUpdate                                                  000211 GR
-  1 _reload                                                        000001 GR
-  1 _score1                                                        000015 GR
-  1 _score10                                                       000016 GR
-  1 _score100                                                      000017 GR
-  1 _score1000                                                     000018 GR
-  1 _score10000                                                    000019 GR
-  0 _scoreDisplay                                                  000217 GR
-  0 _scoreInit                                                     000337 GR
-  0 _scoreUpdate                                                   0002DC GR
-  1 _seconds                                                       00015E GR
-  1 _selection                                                     000161 GR
+  0 _level1_tiles                                                  000034 GR
+  0 _main                                                          000CF8 GR
+  0 _moveEnemy                                                     000168 GR
+  1 _player                                                        000146 GR
+  0 _playerHurtCollision                                           0008FD GR
+  0 _playerInit                                                    000446 GR
+  0 _playerMovement                                                0004D2 GR
+  0 _playerUpdate                                                  000657 GR
+  1 _reload                                                        000145 GR
+  1 _score1                                                        000159 GR
+  1 _score10                                                       00015A GR
+  1 _score100                                                      00015B GR
+  1 _score1000                                                     00015C GR
+  1 _score10000                                                    00015D GR
+  0 _scoreDisplay                                                  00065D GR
+  0 _scoreInit                                                     00077D GR
+  0 _scoreUpdate                                                   000722 GR
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy)                  Page 2
 Hexadecimal [24-Bits]
 
 Symbol Table
 
+  1 _seconds                                                       00015E GR
+  1 _selection                                                     000161 GR
     _set_bkg_data                                                  ****** GX
     _set_bkg_tiles                                                 ****** GX
     _set_interrupts                                                ****** GX
     _set_sprite_data                                               ****** GX
     _shadow_OAM                                                    ****** GX
-  1 _skulls                                                        00001E GR
+  1 _skulls                                                        000004 GR
   2 _sprites                                                       000F58 GR
-  0 _squarePattern                                                 000642 GR
-  0 _squarePatternR                                                0006E5 GR
+  0 _squarePattern                                                 000300 GR
+  0 _squarePatternR                                                0003A3 GR
   1 _state                                                         000160 GR
-  1 _timer                                                         00001A GR
+  1 _timer                                                         000000 GR
   2 _titleScreen                                                   0005F0 GR
   2 _titleSprites                                                  000758 GR
     _wait_vbl_done                                                 ****** GX
+
 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy)                  Page 3
 Hexadecimal [24-Bits]
 
 Area Table
 
-   0 _CODE                                      size    C8F   flags    0
+   0 _CODE                                      size    DC6   flags    0
    1 _DATA                                      size    162   flags    0
    2 _INITIALIZED                               size   1758   flags    0
    3 _DABS                                      size      0   flags    8

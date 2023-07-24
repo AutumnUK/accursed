@@ -1,6 +1,5 @@
 #include <gb/gb.h>
-#include "player.c"
-#include "score.c"
+
 #include "game.c"
 #include "tilemaps/titleScreen.c"
 #include "tilesets/titleSprites.c"

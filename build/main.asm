@@ -12,9 +12,18 @@
 	.globl _game
 	.globl _level1
 	.globl _generalUpdate
-	.globl _collision
+	.globl _playerHurtCollision
+	.globl _bulletCollision
+	.globl _scoreInit
+	.globl _scoreUpdate
+	.globl _scoreDisplay
+	.globl _playerUpdate
+	.globl _bulletUpdate
+	.globl _playerMovement
+	.globl _playerInit
 	.globl _squarePatternR
 	.globl _squarePattern
+	.globl _homingPattern
 	.globl _enemyUpdate
 	.globl _enemyInit
 	.globl _goToNode
@@ -24,13 +33,6 @@
 	.globl _level1_bkg_update
 	.globl _level1_bkg_init
 	.globl _interruptLCD
-	.globl _scoreInit
-	.globl _scoreUpdate
-	.globl _scoreDisplay
-	.globl _playerUpdate
-	.globl _bulletUpdate
-	.globl _playerMovement
-	.globl _playerInit
 	.globl _set_sprite_data
 	.globl _set_bkg_tiles
 	.globl _set_bkg_data
@@ -47,11 +49,6 @@
 	.globl _state
 	.globl _frame
 	.globl _seconds
-	.globl _skulls
-	.globl _background_offset_3
-	.globl _background_offset_2
-	.globl _background_offset_1
-	.globl _timer
 	.globl _score10000
 	.globl _score1000
 	.globl _score100
@@ -61,6 +58,11 @@
 	.globl _player
 	.globl _reload
 	.globl _currentBullet
+	.globl _skulls
+	.globl _background_offset_3
+	.globl _background_offset_2
+	.globl _background_offset_1
+	.globl _timer
 	.globl _level1_tiles
 ;--------------------------------------------------------
 ; special function registers
@@ -69,6 +71,16 @@
 ; ram data
 ;--------------------------------------------------------
 	.area _DATA
+_timer::
+	.ds 1
+_background_offset_1::
+	.ds 1
+_background_offset_2::
+	.ds 1
+_background_offset_3::
+	.ds 1
+_skulls::
+	.ds 320
 _currentBullet::
 	.ds 1
 _reload::
@@ -87,16 +99,6 @@ _score1000::
 	.ds 1
 _score10000::
 	.ds 1
-_timer::
-	.ds 1
-_background_offset_1::
-	.ds 1
-_background_offset_2::
-	.ds 1
-_background_offset_3::
-	.ds 1
-_skulls::
-	.ds 320
 _seconds::
 	.ds 1
 _frame::
@@ -137,775 +139,6 @@ _sprites::
 ; code
 ;--------------------------------------------------------
 	.area _CODE
-;src/player.c:18: void playerInit() {
-;	---------------------------------
-; Function playerInit
-; ---------------------------------
-_playerInit::
-	add	sp, #-4
-;src/player.c:19: reload          =   0;
-	ld	hl, #_reload
-	ld	(hl), #0x00
-;src/player.c:20: player.x        =  50;
-	ld	hl, #_player
-	ld	(hl), #0x32
-;src/player.c:21: player.y        =  50;
-	ld	hl, #(_player + 1)
-	ld	(hl), #0x32
-;src/player.c:22: player.id       =  20;
-	ld	hl, #(_player + 2)
-	ld	(hl), #0x14
-;src/player.c:23: player.shooting = FALSE;
-	ld	hl, #(_player + 3)
-	ld	(hl), #0x00
-;src/player.c:24: currentBullet   =   1;
-	ld	hl, #_currentBullet
-	ld	(hl), #0x01
-;src/player.c:26: for (int i = 0; i < NUM_BULLETS; i++) {
-	ld	bc, #0x0000
-00104$:
-	ld	a, c
-	sub	a, #0x03
-	ld	a, b
-	rla
-	ccf
-	rra
-	sbc	a, #0x80
-	jr	NC, 00106$
-;src/player.c:27: bullets[i].ready = TRUE;
-	ld	l, c
-	ld	h, b
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	sp
-	inc	sp
-	ld	e, l
-	ld	d, h
-	push	de
-	ld	hl, #_bullets
-	add	hl, de
-	push	hl
-	ld	a, l
-	ldhl	sp,	#4
-	ld	(hl), a
-	pop	hl
-	ld	a, h
-	ldhl	sp,	#3
-	ld	(hl-), a
-	ld	a, (hl+)
-	ld	e, a
-	ld	d, (hl)
-	ld	hl, #0x0004
-	add	hl, de
-	ld	(hl), #0x01
-;src/player.c:28: bullets[i].x     = 200;   
-	ldhl	sp,	#2
-	ld	a,	(hl+)
-	ld	h, (hl)
-	ld	l, a
-	ld	(hl), #0xc8
-;src/player.c:29: bullets[i].y     = 0;
-	ldhl	sp,	#2
-	ld	a, (hl+)
-	ld	e, a
-;src/player.c:30: bullets[i].id    = i + 1;  
-	ld	a, (hl-)
-	ld	d, a
-	inc	de
-	xor	a, a
-	ld	(de), a
-	ld	a, (hl+)
-	ld	e, a
-	ld	d, (hl)
-	inc	de
-	inc	de
-	ld	a, c
-	inc	a
-	ld	(de), a
-;src/player.c:31: bullets[i].tile  = 2;
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	a, (hl-)
-	ld	l, (hl)
-	ld	h, a
-;	spillPairReg hl
-;	spillPairReg hl
-	inc	hl
-	inc	hl
-	inc	hl
-	ld	(hl), #0x02
-;src/player.c:32: set_sprite_tile(bullets[i].id, bullets[i].tile);
-	ld	a, (hl)
-	ldhl	sp,	#3
-	ld	(hl), a
-	ld	a, (de)
-	ld	e, a
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	l, e
-	add	hl, hl
-	add	hl, hl
-	ld	de, #_shadow_OAM
-	add	hl, de
-	inc	hl
-	inc	hl
-	ld	e, l
-	ld	d, h
-	ldhl	sp,	#3
-	ld	a, (hl)
-	ld	(de), a
-;src/player.c:26: for (int i = 0; i < NUM_BULLETS; i++) {
-	inc	bc
-	jr	00104$
-00106$:
-;src/player.c:34: }
-	add	sp, #4
-	ret
-;src/player.c:37: void playerMovement() {
-;	---------------------------------
-; Function playerMovement
-; ---------------------------------
-_playerMovement::
-	dec	sp
-	dec	sp
-;src/player.c:38: move_sprite( player.id , player.x , player.y );
-	ld	a, (#(_player + 1) + 0)
-	ldhl	sp,	#0
-	ld	(hl), a
-	ld	a, (#_player + 0)
-	ldhl	sp,	#1
-	ld	(hl), a
-	ld	bc, #_player + 2
-	ld	a, (bc)
-	ld	e, a
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	l, e
-	add	hl, hl
-	add	hl, hl
-	ld	de, #_shadow_OAM
-	add	hl, de
-	ld	e, l
-	ld	d, h
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
-	ldhl	sp,	#0
-	ld	a, (hl+)
-	ld	(de), a
-	inc	de
-	ld	a, (hl)
-	ld	(de), a
-;src/player.c:39: if (joypad() & J_UP   ) { player.y -- ; if ( player.y < MIN_Y ) { player.y = MIN_Y; } }
-	call	_joypad
-	bit	2, a
-	jr	Z, 00104$
-	ld	a, (#(_player + 1) + 0)
-	dec	a
-	ld	hl, #(_player + 1)
-	ld	(hl), a
-	sub	a, #0x10
-	jr	NC, 00104$
-	ld	(hl), #0x10
-00104$:
-;src/player.c:40: if (joypad() & J_DOWN ) { player.y ++ ; if ( player.y > MAX_Y ) { player.y = MAX_Y; } }
-	call	_joypad
-	bit	3, a
-	jr	Z, 00108$
-	ld	a, (#(_player + 1) + 0)
-	inc	a
-	ldhl	sp,	#1
-	ld	(hl), a
-	ld	de, #(_player + 1)
-	ld	a, (hl)
-	ld	(de), a
-	ld	a, #0x88
-	sub	a, (hl)
-	jr	NC, 00108$
-	ld	hl, #(_player + 1)
-	ld	(hl), #0x88
-00108$:
-;src/player.c:41: if (joypad() & J_LEFT ) { player.x -- ; if ( player.x < MIN_X ) { player.x = MIN_X; } }
-	call	_joypad
-	bit	1, a
-	jr	Z, 00112$
-	ld	a, (#_player + 0)
-	dec	a
-	ld	hl, #_player
-	ld	(hl), a
-	sub	a, #0x08
-	jr	NC, 00112$
-	ld	(hl), #0x08
-00112$:
-;src/player.c:42: if (joypad() & J_RIGHT) { player.x ++ ; if ( player.x > MAX_X ) { player.x = MAX_X; } }
-	call	_joypad
-	rrca
-	jr	NC, 00116$
-	ld	a, (#_player + 0)
-	inc	a
-	ldhl	sp,	#1
-	ld	(hl), a
-	ld	de, #_player
-	ld	a, (hl)
-	ld	(de), a
-	ld	a, #0xa0
-	sub	a, (hl)
-	jr	NC, 00116$
-	ld	hl, #_player
-	ld	(hl), #0xa0
-00116$:
-;src/player.c:43: if (joypad() & J_A    ) { player.shooting = TRUE; } else { player.shooting = FALSE; } 
-	call	_joypad
-	ld	e, a
-	ld	hl, #_player + 3
-	bit	4, e
-	jr	Z, 00118$
-	ld	(hl), #0x01
-	jr	00119$
-00118$:
-	ld	(hl), #0x00
-00119$:
-;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
-	call	_joypad
-	ld	e, a
-;src/player.c:38: move_sprite( player.id , player.x , player.y );
-	ld	a, (bc)
-	ld	c, a
-;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
-	bit	1, e
-	jr	Z, 00121$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	l, c
-	add	hl, hl
-	add	hl, hl
-	ld	de, #_shadow_OAM
-	add	hl, de
-	inc	hl
-	inc	hl
-	ld	(hl), #0x00
-;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
-	jr	00126$
-00121$:
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	de, #_shadow_OAM+0
-	ld	l, c
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, de
-	inc	hl
-	inc	hl
-	ld	(hl), #0x01
-;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
-00126$:
-;src/player.c:45: }
-	inc	sp
-	inc	sp
-	ret
-;src/player.c:47: void bulletUpdate() {
-;	---------------------------------
-; Function bulletUpdate
-; ---------------------------------
-_bulletUpdate::
-	dec	sp
-	dec	sp
-;src/player.c:49: if (reload > 0) { reload --; }
-	ld	hl, #_reload
-	ld	a, (hl)
-	or	a, a
-	jr	Z, 00102$
-	dec	(hl)
-00102$:
-;src/player.c:51: if (player.shooting && reload == 0) {
-	ld	a, (#(_player + 3) + 0)
-	or	a, a
-	jr	Z, 00129$
-	ld	a, (#_reload)
-	or	a, a
-	jr	NZ, 00129$
-;src/player.c:52: for (int i = 0; i < NUM_BULLETS; i++) {
-	ld	bc, #0x0000
-00114$:
-	ld	a, c
-	sub	a, #0x03
-	ld	a, b
-	rla
-	ccf
-	rra
-	sbc	a, #0x80
-	jr	NC, 00129$
-;src/player.c:53: if (currentBullet == i + 1) {
-	ld	e, c
-	ld	d, b
-	inc	de
-	ld	hl, #_currentBullet
-	ld	l, (hl)
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	a, l
-	sub	a, e
-	jr	NZ, 00115$
-	ld	a, h
-	sub	a, d
-	jr	NZ, 00115$
-;src/player.c:54: bullets[i].x     = player.x;
-	ld	l, c
-	ld	h, b
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	ld	bc,#_bullets
-	add	hl,bc
-	ld	c, l
-	ld	b, h
-	ld	a, (#_player + 0)
-	ld	(bc), a
-;src/player.c:55: bullets[i].y     = player.y;
-	ld	e, c
-	ld	d, b
-	inc	de
-	ld	a, (#_player + 1)
-	ld	(de), a
-;src/player.c:56: bullets[i].ready = FALSE;
-	inc	bc
-	inc	bc
-	inc	bc
-	inc	bc
-	xor	a, a
-	ld	(bc), a
-;src/player.c:57: reload += RELOAD;
-	ld	hl, #_reload
-	ld	a, (hl)
-	add	a, #0x0a
-	ld	(hl), a
-;src/player.c:58: currentBullet = (currentBullet % NUM_BULLETS) + 1;
-	ld	hl, #_currentBullet
-	ld	e, (hl)
-	ld	d, #0x00
-	ld	bc, #0x0003
-	call	__modsint
-	ld	a, c
-	inc	a
-	ld	(#_currentBullet),a
-;src/player.c:59: break;
-	jr	00129$
-00115$:
-;src/player.c:52: for (int i = 0; i < NUM_BULLETS; i++) {
-	ld	c, e
-	ld	b, d
-	jr	00114$
-;src/player.c:65: for (int i = 0; i < NUM_BULLETS; i++) {
-00129$:
-	ld	bc, #0x0000
-00117$:
-	ld	a, c
-	sub	a, #0x03
-	ld	a, b
-	rla
-	ccf
-	rra
-	sbc	a, #0x80
-	jr	NC, 00119$
-;src/player.c:66: if (bullets[i].x >= MAX_X) { bullets[i].x = 200; bullets[i].ready = TRUE; }
-	ld	l, c
-	ld	h, b
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	ld	a, l
-	add	a, #<(_bullets)
-	ld	e, a
-	ld	a, h
-	adc	a, #>(_bullets)
-	ld	d, a
-	ld	a, (de)
-	sub	a, #0xa0
-	jr	C, 00110$
-	ld	a, #0xc8
-	ld	(de), a
-	ld	hl, #0x0004
-	add	hl, de
-	ld	(hl), #0x01
-00110$:
-;src/player.c:68: bullets[i].x += 5;
-	ld	a, (de)
-	add	a, #0x05
-	ld	(de), a
-;src/player.c:69: move_sprite(bullets[i].id, bullets[i].x, bullets[i].y);
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, d
-;	spillPairReg hl
-;	spillPairReg hl
-	inc	hl
-	ld	a, (hl)
-	ldhl	sp,	#0
-	ld	(hl), a
-	ld	a, (de)
-	ldhl	sp,	#1
-	ld	(hl), a
-	inc	de
-	inc	de
-	ld	a, (de)
-	ld	e, a
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	l, e
-	add	hl, hl
-	add	hl, hl
-	ld	de, #_shadow_OAM
-	add	hl, de
-	ld	e, l
-	ld	d, h
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
-	ldhl	sp,	#0
-	ld	a, (hl+)
-	ld	(de), a
-	inc	de
-	ld	a, (hl)
-	ld	(de), a
-;src/player.c:65: for (int i = 0; i < NUM_BULLETS; i++) {
-	inc	bc
-	jr	00117$
-00119$:
-;src/player.c:71: }
-	inc	sp
-	inc	sp
-	ret
-;src/player.c:73: void playerUpdate() { playerMovement(); bulletUpdate(); }
-;	---------------------------------
-; Function playerUpdate
-; ---------------------------------
-_playerUpdate::
-	call	_playerMovement
-	jp	_bulletUpdate
-;src/score.c:9: void scoreDisplay(uint8_t s, uint8_t id, uint8_t x) { 
-;	---------------------------------
-; Function scoreDisplay
-; ---------------------------------
-_scoreDisplay::
-;src/score.c:10: if (s == 0) { set_sprite_tile(id,100); }
-	ld	d, a
-	or	a, a
-	jr	NZ, 00102$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x64
-;src/score.c:10: if (s == 0) { set_sprite_tile(id,100); }
-00102$:
-;src/score.c:11: if (s == 1) { set_sprite_tile(id,101); }
-	ld	a, d
-	dec	a
-	jr	NZ, 00104$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x65
-;src/score.c:11: if (s == 1) { set_sprite_tile(id,101); }
-00104$:
-;src/score.c:12: if (s == 2) { set_sprite_tile(id,102); }
-	ld	a, d
-	sub	a, #0x02
-	jr	NZ, 00106$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x66
-;src/score.c:12: if (s == 2) { set_sprite_tile(id,102); }
-00106$:
-;src/score.c:13: if (s == 3) { set_sprite_tile(id,103); }
-	ld	a, d
-	sub	a, #0x03
-	jr	NZ, 00108$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x67
-;src/score.c:13: if (s == 3) { set_sprite_tile(id,103); }
-00108$:
-;src/score.c:14: if (s == 4) { set_sprite_tile(id,104); }
-	ld	a, d
-	sub	a, #0x04
-	jr	NZ, 00110$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x68
-;src/score.c:14: if (s == 4) { set_sprite_tile(id,104); }
-00110$:
-;src/score.c:15: if (s == 5) { set_sprite_tile(id,105); }
-	ld	a, d
-	sub	a, #0x05
-	jr	NZ, 00112$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x69
-;src/score.c:15: if (s == 5) { set_sprite_tile(id,105); }
-00112$:
-;src/score.c:16: if (s == 6) { set_sprite_tile(id,106); }
-	ld	a, d
-	sub	a, #0x06
-	jr	NZ, 00114$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x6a
-;src/score.c:16: if (s == 6) { set_sprite_tile(id,106); }
-00114$:
-;src/score.c:17: if (s == 7) { set_sprite_tile(id,107); }
-	ld	a, d
-	sub	a, #0x07
-	jr	NZ, 00116$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x6b
-;src/score.c:17: if (s == 7) { set_sprite_tile(id,107); }
-00116$:
-;src/score.c:18: if (s == 8) { set_sprite_tile(id,108); }
-	ld	a, d
-	sub	a, #0x08
-	jr	NZ, 00118$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x6c
-;src/score.c:18: if (s == 8) { set_sprite_tile(id,108); }
-00118$:
-;src/score.c:19: if (s == 9) { set_sprite_tile(id,109); }
-	ld	a, d
-	sub	a, #0x09
-	jr	NZ, 00120$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	bc, #_shadow_OAM+0
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	add	hl, bc
-	inc	hl
-	inc	hl
-	ld	(hl), #0x6d
-;src/score.c:19: if (s == 9) { set_sprite_tile(id,109); }
-00120$:
-;src/score.c:20: move_sprite(id,x,152);
-	ldhl	sp,	#2
-	ld	c, (hl)
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
-	ld	l, e
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	add	hl, hl
-	add	hl, hl
-	ld	de, #_shadow_OAM
-	add	hl, de
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
-	ld	(hl), #0x98
-	inc	hl
-	ld	(hl), c
-;src/score.c:20: move_sprite(id,x,152);
-;src/score.c:21: }
-	pop	hl
-	inc	sp
-	jp	(hl)
-;src/score.c:23: void scoreUpdate() {
-;	---------------------------------
-; Function scoreUpdate
-; ---------------------------------
-_scoreUpdate::
-;src/score.c:24: scoreDisplay(score10000, 30,  8);
-	ld	a, #0x08
-	push	af
-	inc	sp
-	ld	e, #0x1e
-	ld	a, (#_score10000)
-	call	_scoreDisplay
-;src/score.c:25: scoreDisplay(score1000,  31, 16);
-	ld	a, #0x10
-	push	af
-	inc	sp
-	ld	e, #0x1f
-	ld	a, (#_score1000)
-	call	_scoreDisplay
-;src/score.c:26: scoreDisplay(score100,   32, 24);
-	ld	a, #0x18
-	push	af
-	inc	sp
-	ld	e, #0x20
-	ld	a, (#_score100)
-	call	_scoreDisplay
-;src/score.c:27: scoreDisplay(score10,    33, 32);
-	ld	a, #0x20
-	push	af
-	inc	sp
-	ld	e, #0x21
-	ld	a, (#_score10)
-	call	_scoreDisplay
-;src/score.c:28: scoreDisplay(score1,     34, 40);
-	ld	a, #0x28
-	push	af
-	inc	sp
-	ld	e, #0x22
-	ld	a, (#_score1)
-	call	_scoreDisplay
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	hl, #(_shadow_OAM + 142)
-	ld	(hl), #0x64
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
-	ld	hl, #(_shadow_OAM + 140)
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
-	ld	a, #0x98
-	ld	(hl+), a
-	ld	(hl), #0x30
-;src/score.c:31: if (score1 >= 10) { score10 ++; score1 -= 10;}
-	ld	a, (#_score1)
-	sub	a, #0x0a
-	ret	C
-	ld	hl, #_score10
-	inc	(hl)
-	ld	hl, #_score1
-	ld	a, (hl)
-	add	a, #0xf6
-	ld	(hl), a
-;src/score.c:32: }
-	ret
-;src/score.c:34: void scoreInit() {
-;	---------------------------------
-; Function scoreInit
-; ---------------------------------
-_scoreInit::
-;src/score.c:35: score10000 = 0;
-	ld	hl, #_score10000
-	ld	(hl), #0x00
-;src/score.c:36: score1000  = 0;
-	ld	hl, #_score1000
-	ld	(hl), #0x00
-;src/score.c:37: score100   = 0;
-	ld	hl, #_score100
-	ld	(hl), #0x00
-;src/score.c:38: score10    = 0;
-	ld	hl, #_score10
-	ld	(hl), #0x00
-;src/score.c:39: score1     = 0;
-	ld	hl, #_score1
-	ld	(hl), #0x00
-;src/score.c:40: }
-	ret
 ;src/level1_background.c:10: void interruptLCD() {
 ;	---------------------------------
 ; Function interruptLCD
@@ -1438,7 +671,7 @@ _enemyUpdate::
 	ldhl	sp,	#12
 	ld	a, e
 	ld	(hl+), a
-;src/enemy.c:35: if ( m -> active) { 
+;src/enemy.c:36: if ( m -> active) { 
 	ld	a, d
 	ld	(hl-), a
 	ld	a, (hl+)
@@ -1453,7 +686,7 @@ _enemyUpdate::
 	push	de
 	ld	a, (de)
 	ldhl	sp,	#11
-;src/enemy.c:37: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
+;src/enemy.c:38: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
 	ld	(hl+), a
 	ld	a, (hl+)
 	ld	e, a
@@ -1468,18 +701,18 @@ _enemyUpdate::
 	ld	a, h
 	ldhl	sp,	#3
 	ld	(hl), a
-;src/enemy.c:35: if ( m -> active) { 
+;src/enemy.c:36: if ( m -> active) { 
 	ldhl	sp,	#11
 	ld	a, (hl)
 	or	a, a
 	jp	Z, 00107$
-;src/enemy.c:36: moveEnemy(m);
+;src/enemy.c:37: moveEnemy(m);
 	inc	hl
 	ld	a, (hl+)
 	ld	e, a
 	ld	d, (hl)
 	call	_moveEnemy
-;src/enemy.c:37: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
+;src/enemy.c:38: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
 	ldhl	sp,#12
 	ld	a, (hl+)
 	ld	e, a
@@ -1575,7 +808,7 @@ _enemyUpdate::
 	ld	h, a
 	ld	(hl), c
 00102$:
-;src/enemy.c:38: goToNode (m, & m -> node[m -> currentNode]);
+;src/enemy.c:39: goToNode (m, & m -> node[m -> currentNode]);
 	ldhl	sp,#7
 	ld	a, (hl+)
 	ld	e, a
@@ -1596,7 +829,7 @@ _enemyUpdate::
 	ld	e, a
 	ld	d, (hl)
 	call	_goToNode
-;src/enemy.c:39: if (m -> currentNode == 4) { m -> active = 0; }
+;src/enemy.c:40: if (m -> currentNode == 4) { m -> active = 0; }
 	ldhl	sp,#7
 	ld	a, (hl+)
 	ld	e, a
@@ -1608,35 +841,54 @@ _enemyUpdate::
 	ld	(hl), #0x00
 	push	hl
 00107$:
-;src/enemy.c:42: if ( m -> active == 0 ) {
+;src/enemy.c:44: if ( m -> active == 0 ) {
 	pop	de
 	push	de
 	ld	a, (de)
 	or	a, a
 	jr	NZ, 00110$
-;src/enemy.c:43: m -> x = 0;
+;src/enemy.c:45: m -> x = 0;
 	ldhl	sp,	#12
 	ld	a,	(hl+)
 	ld	h, (hl)
 	ld	l, a
 	ld	(hl), #0x00
-;src/enemy.c:44: m -> y = 0;
+;src/enemy.c:46: m -> y = 0;
 	ldhl	sp,	#2
 	ld	a,	(hl+)
 	ld	h, (hl)
 	ld	l, a
 	ld	(hl), #0x00
-;src/enemy.c:45: moveEnemy(m);
+;src/enemy.c:47: moveEnemy(m);
 	ldhl	sp,	#12
 	ld	a, (hl+)
 	ld	e, a
 	ld	d, (hl)
 	call	_moveEnemy
 00110$:
-;src/enemy.c:47: }
+;src/enemy.c:49: }
 	add	sp, #14
 	ret
-;src/enemy.c:49: void squarePattern(struct Enemy * m, uint8_t distance) {	
+;src/enemy.c:51: void homingPattern(struct Enemy * m) {
+;	---------------------------------
+; Function homingPattern
+; ---------------------------------
+_homingPattern::
+;src/enemy.c:52: m -> node[0].x = m -> x;
+	ld	hl, #0x0008
+	add	hl, de
+	ld	a, (de)
+	ld	(hl), a
+;src/enemy.c:53: m -> node[0].y = m -> y;
+	ld	hl,#0x9
+	add	hl,de
+	inc	de
+	inc	de
+	ld	a, (de)
+	ld	(hl), a
+;src/enemy.c:55: }
+	ret
+;src/enemy.c:57: void squarePattern(struct Enemy * m, uint8_t distance) {	
 ;	---------------------------------
 ; Function squarePattern
 ; ---------------------------------
@@ -1648,7 +900,7 @@ _squarePattern::
 	ld	(hl), d
 	dec	hl
 	dec	hl
-;src/enemy.c:50: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
+;src/enemy.c:58: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
 	ld	(hl+), a
 	ld	a, (hl+)
 	ld	e, a
@@ -1682,7 +934,7 @@ _squarePattern::
 	inc	hl
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:51: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
+;src/enemy.c:59: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
 	ld	c, e
 	ld	b, d
 	inc	bc
@@ -1717,7 +969,7 @@ _squarePattern::
 	ldhl	sp,#5
 	ld	(hl), a
 	ld	(bc), a
-;src/enemy.c:52: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y += distance;    // Move Down
+;src/enemy.c:60: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y += distance;    // Move Down
 	push	de
 	ldhl	sp,#2
 	ld	a, (hl+)
@@ -1756,7 +1008,7 @@ _squarePattern::
 	ld	(hl), a
 	ld	(bc), a
 	ld	(de), a
-;src/enemy.c:53: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
+;src/enemy.c:61: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
 	pop	de
 	push	de
 	ld	hl, #0x0006
@@ -1784,10 +1036,10 @@ _squarePattern::
 	ldhl	sp,	#5
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:54: }
+;src/enemy.c:62: }
 	add	sp, #9
 	ret
-;src/enemy.c:56: void squarePatternR(struct Enemy * m, uint8_t distance) {	
+;src/enemy.c:64: void squarePatternR(struct Enemy * m, uint8_t distance) {	
 ;	---------------------------------
 ; Function squarePatternR
 ; ---------------------------------
@@ -1799,7 +1051,7 @@ _squarePatternR::
 	ld	(hl), d
 	dec	hl
 	dec	hl
-;src/enemy.c:57: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
+;src/enemy.c:65: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
 	ld	(hl+), a
 	ld	a, (hl+)
 	ld	e, a
@@ -1833,7 +1085,7 @@ _squarePatternR::
 	inc	hl
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:58: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
+;src/enemy.c:66: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
 	ld	c, e
 	ld	b, d
 	inc	bc
@@ -1868,7 +1120,7 @@ _squarePatternR::
 	ldhl	sp,#5
 	ld	(hl), a
 	ld	(bc), a
-;src/enemy.c:59: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y -= distance;    // Move Up
+;src/enemy.c:67: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y -= distance;    // Move Up
 	push	de
 	ldhl	sp,#2
 	ld	a, (hl+)
@@ -1907,7 +1159,7 @@ _squarePatternR::
 	ld	(hl), a
 	ld	(bc), a
 	ld	(de), a
-;src/enemy.c:60: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
+;src/enemy.c:68: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
 	pop	de
 	push	de
 	ld	hl, #0x0006
@@ -1935,19 +1187,788 @@ _squarePatternR::
 	ldhl	sp,	#5
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:61: }
+;src/enemy.c:69: }
 	add	sp, #9
 	ret
-;src/game.c:8: void collision() {
+;src/player.c:18: void playerInit() {
 ;	---------------------------------
-; Function collision
+; Function playerInit
 ; ---------------------------------
-_collision::
+_playerInit::
+	add	sp, #-4
+;src/player.c:19: reload          =   0;
+	ld	hl, #_reload
+	ld	(hl), #0x00
+;src/player.c:20: player.x        =  50;
+	ld	hl, #_player
+	ld	(hl), #0x32
+;src/player.c:21: player.y        =  50;
+	ld	hl, #(_player + 1)
+	ld	(hl), #0x32
+;src/player.c:22: player.id       =  20;
+	ld	hl, #(_player + 2)
+	ld	(hl), #0x14
+;src/player.c:23: player.shooting = FALSE;
+	ld	hl, #(_player + 3)
+	ld	(hl), #0x00
+;src/player.c:24: currentBullet   =   1;
+	ld	hl, #_currentBullet
+	ld	(hl), #0x01
+;src/player.c:26: for (int i = 0; i < NUM_BULLETS; i++) {
+	ld	bc, #0x0000
+00104$:
+	ld	a, c
+	sub	a, #0x03
+	ld	a, b
+	rla
+	ccf
+	rra
+	sbc	a, #0x80
+	jr	NC, 00106$
+;src/player.c:27: bullets[i].ready = TRUE;
+	ld	l, c
+	ld	h, b
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	sp
+	inc	sp
+	ld	e, l
+	ld	d, h
+	push	de
+	ld	hl, #_bullets
+	add	hl, de
+	push	hl
+	ld	a, l
+	ldhl	sp,	#4
+	ld	(hl), a
+	pop	hl
+	ld	a, h
+	ldhl	sp,	#3
+	ld	(hl-), a
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	ld	hl, #0x0004
+	add	hl, de
+	ld	(hl), #0x01
+;src/player.c:28: bullets[i].x     = 200;   
+	ldhl	sp,	#2
+	ld	a,	(hl+)
+	ld	h, (hl)
+	ld	l, a
+	ld	(hl), #0xc8
+;src/player.c:29: bullets[i].y     = 0;
+	ldhl	sp,	#2
+	ld	a, (hl+)
+	ld	e, a
+;src/player.c:30: bullets[i].id    = i + 1;  
+	ld	a, (hl-)
+	ld	d, a
+	inc	de
+	xor	a, a
+	ld	(de), a
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	inc	de
+	inc	de
+	ld	a, c
+	inc	a
+	ld	(de), a
+;src/player.c:31: bullets[i].tile  = 2;
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	a, (hl-)
+	ld	l, (hl)
+	ld	h, a
+;	spillPairReg hl
+;	spillPairReg hl
+	inc	hl
+	inc	hl
+	inc	hl
+	ld	(hl), #0x02
+;src/player.c:32: set_sprite_tile(bullets[i].id, bullets[i].tile);
+	ld	a, (hl)
+	ldhl	sp,	#3
+	ld	(hl), a
+	ld	a, (de)
+	ld	e, a
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	l, e
+	add	hl, hl
+	add	hl, hl
+	ld	de, #_shadow_OAM
+	add	hl, de
+	inc	hl
+	inc	hl
+	ld	e, l
+	ld	d, h
+	ldhl	sp,	#3
+	ld	a, (hl)
+	ld	(de), a
+;src/player.c:26: for (int i = 0; i < NUM_BULLETS; i++) {
+	inc	bc
+	jr	00104$
+00106$:
+;src/player.c:34: }
+	add	sp, #4
+	ret
+;src/player.c:37: void playerMovement() {
+;	---------------------------------
+; Function playerMovement
+; ---------------------------------
+_playerMovement::
+	dec	sp
+	dec	sp
+;src/player.c:38: move_sprite( player.id , player.x , player.y );
+	ld	a, (#(_player + 1) + 0)
+	ldhl	sp,	#0
+	ld	(hl), a
+	ld	a, (#_player + 0)
+	ldhl	sp,	#1
+	ld	(hl), a
+	ld	bc, #_player + 2
+	ld	a, (bc)
+	ld	e, a
+;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	l, e
+	add	hl, hl
+	add	hl, hl
+	ld	de, #_shadow_OAM
+	add	hl, de
+	ld	e, l
+	ld	d, h
+;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+	ldhl	sp,	#0
+	ld	a, (hl+)
+	ld	(de), a
+	inc	de
+	ld	a, (hl)
+	ld	(de), a
+;src/player.c:39: if (joypad() & J_UP   ) { player.y -- ; if ( player.y < MIN_Y ) { player.y = MIN_Y; } }
+	call	_joypad
+	bit	2, a
+	jr	Z, 00104$
+	ld	a, (#(_player + 1) + 0)
+	dec	a
+	ld	hl, #(_player + 1)
+	ld	(hl), a
+	sub	a, #0x10
+	jr	NC, 00104$
+	ld	(hl), #0x10
+00104$:
+;src/player.c:40: if (joypad() & J_DOWN ) { player.y ++ ; if ( player.y > MAX_Y ) { player.y = MAX_Y; } }
+	call	_joypad
+	bit	3, a
+	jr	Z, 00108$
+	ld	a, (#(_player + 1) + 0)
+	inc	a
+	ldhl	sp,	#1
+	ld	(hl), a
+	ld	de, #(_player + 1)
+	ld	a, (hl)
+	ld	(de), a
+	ld	a, #0x88
+	sub	a, (hl)
+	jr	NC, 00108$
+	ld	hl, #(_player + 1)
+	ld	(hl), #0x88
+00108$:
+;src/player.c:41: if (joypad() & J_LEFT ) { player.x -- ; if ( player.x < MIN_X ) { player.x = MIN_X; } }
+	call	_joypad
+	bit	1, a
+	jr	Z, 00112$
+	ld	a, (#_player + 0)
+	dec	a
+	ld	hl, #_player
+	ld	(hl), a
+	sub	a, #0x08
+	jr	NC, 00112$
+	ld	(hl), #0x08
+00112$:
+;src/player.c:42: if (joypad() & J_RIGHT) { player.x ++ ; if ( player.x > MAX_X ) { player.x = MAX_X; } }
+	call	_joypad
+	rrca
+	jr	NC, 00116$
+	ld	a, (#_player + 0)
+	inc	a
+	ldhl	sp,	#1
+	ld	(hl), a
+	ld	de, #_player
+	ld	a, (hl)
+	ld	(de), a
+	ld	a, #0xa0
+	sub	a, (hl)
+	jr	NC, 00116$
+	ld	hl, #_player
+	ld	(hl), #0xa0
+00116$:
+;src/player.c:43: if (joypad() & J_A    ) { player.shooting = TRUE; } else { player.shooting = FALSE; } 
+	call	_joypad
+	ld	e, a
+	ld	hl, #_player + 3
+	bit	4, e
+	jr	Z, 00118$
+	ld	(hl), #0x01
+	jr	00119$
+00118$:
+	ld	(hl), #0x00
+00119$:
+;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
+	call	_joypad
+	ld	e, a
+;src/player.c:38: move_sprite( player.id , player.x , player.y );
+	ld	a, (bc)
+	ld	c, a
+;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
+	bit	1, e
+	jr	Z, 00121$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	l, c
+	add	hl, hl
+	add	hl, hl
+	ld	de, #_shadow_OAM
+	add	hl, de
+	inc	hl
+	inc	hl
+	ld	(hl), #0x00
+;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
+	jr	00126$
+00121$:
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	de, #_shadow_OAM+0
+	ld	l, c
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, de
+	inc	hl
+	inc	hl
+	ld	(hl), #0x01
+;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
+00126$:
+;src/player.c:45: }
+	inc	sp
+	inc	sp
+	ret
+;src/player.c:47: void bulletUpdate() {
+;	---------------------------------
+; Function bulletUpdate
+; ---------------------------------
+_bulletUpdate::
+	dec	sp
+	dec	sp
+;src/player.c:49: if (reload > 0) { reload --; }
+	ld	hl, #_reload
+	ld	a, (hl)
+	or	a, a
+	jr	Z, 00102$
+	dec	(hl)
+00102$:
+;src/player.c:51: if (player.shooting && reload == 0) {
+	ld	a, (#(_player + 3) + 0)
+	or	a, a
+	jr	Z, 00129$
+	ld	a, (#_reload)
+	or	a, a
+	jr	NZ, 00129$
+;src/player.c:52: for (int i = 0; i < NUM_BULLETS; i++) {
+	ld	bc, #0x0000
+00114$:
+	ld	a, c
+	sub	a, #0x03
+	ld	a, b
+	rla
+	ccf
+	rra
+	sbc	a, #0x80
+	jr	NC, 00129$
+;src/player.c:53: if (currentBullet == i + 1) {
+	ld	e, c
+	ld	d, b
+	inc	de
+	ld	hl, #_currentBullet
+	ld	l, (hl)
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	a, l
+	sub	a, e
+	jr	NZ, 00115$
+	ld	a, h
+	sub	a, d
+	jr	NZ, 00115$
+;src/player.c:54: bullets[i].x     = player.x;
+	ld	l, c
+	ld	h, b
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	ld	bc,#_bullets
+	add	hl,bc
+	ld	c, l
+	ld	b, h
+	ld	a, (#_player + 0)
+	ld	(bc), a
+;src/player.c:55: bullets[i].y     = player.y;
+	ld	e, c
+	ld	d, b
+	inc	de
+	ld	a, (#_player + 1)
+	ld	(de), a
+;src/player.c:56: bullets[i].ready = FALSE;
+	inc	bc
+	inc	bc
+	inc	bc
+	inc	bc
+	xor	a, a
+	ld	(bc), a
+;src/player.c:57: reload += RELOAD;
+	ld	hl, #_reload
+	ld	a, (hl)
+	add	a, #0x14
+	ld	(hl), a
+;src/player.c:58: currentBullet = (currentBullet % NUM_BULLETS) + 1;
+	ld	hl, #_currentBullet
+	ld	e, (hl)
+	ld	d, #0x00
+	ld	bc, #0x0003
+	call	__modsint
+	ld	a, c
+	inc	a
+	ld	(#_currentBullet),a
+;src/player.c:59: break;
+	jr	00129$
+00115$:
+;src/player.c:52: for (int i = 0; i < NUM_BULLETS; i++) {
+	ld	c, e
+	ld	b, d
+	jr	00114$
+;src/player.c:65: for (int i = 0; i < NUM_BULLETS; i++) {
+00129$:
+	ld	bc, #0x0000
+00117$:
+	ld	a, c
+	sub	a, #0x03
+	ld	a, b
+	rla
+	ccf
+	rra
+	sbc	a, #0x80
+	jr	NC, 00119$
+;src/player.c:66: if (bullets[i].x >= MAX_X) { bullets[i].x = 200; bullets[i].ready = TRUE; }
+	ld	l, c
+	ld	h, b
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	ld	a, l
+	add	a, #<(_bullets)
+	ld	e, a
+	ld	a, h
+	adc	a, #>(_bullets)
+	ld	d, a
+	ld	a, (de)
+	sub	a, #0xa0
+	jr	C, 00110$
+	ld	a, #0xc8
+	ld	(de), a
+	ld	hl, #0x0004
+	add	hl, de
+	ld	(hl), #0x01
+00110$:
+;src/player.c:68: bullets[i].x += 5;
+	ld	a, (de)
+	add	a, #0x05
+	ld	(de), a
+;src/player.c:69: move_sprite(bullets[i].id, bullets[i].x, bullets[i].y);
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, d
+;	spillPairReg hl
+;	spillPairReg hl
+	inc	hl
+	ld	a, (hl)
+	ldhl	sp,	#0
+	ld	(hl), a
+	ld	a, (de)
+	ldhl	sp,	#1
+	ld	(hl), a
+	inc	de
+	inc	de
+	ld	a, (de)
+	ld	e, a
+;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	l, e
+	add	hl, hl
+	add	hl, hl
+	ld	de, #_shadow_OAM
+	add	hl, de
+	ld	e, l
+	ld	d, h
+;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+	ldhl	sp,	#0
+	ld	a, (hl+)
+	ld	(de), a
+	inc	de
+	ld	a, (hl)
+	ld	(de), a
+;src/player.c:65: for (int i = 0; i < NUM_BULLETS; i++) {
+	inc	bc
+	jr	00117$
+00119$:
+;src/player.c:71: }
+	inc	sp
+	inc	sp
+	ret
+;src/player.c:73: void playerUpdate() { playerMovement(); bulletUpdate(); }
+;	---------------------------------
+; Function playerUpdate
+; ---------------------------------
+_playerUpdate::
+	call	_playerMovement
+	jp	_bulletUpdate
+;src/score.c:9: void scoreDisplay(uint8_t s, uint8_t id, uint8_t x) { 
+;	---------------------------------
+; Function scoreDisplay
+; ---------------------------------
+_scoreDisplay::
+;src/score.c:10: if (s == 0) { set_sprite_tile(id,100); }
+	ld	d, a
+	or	a, a
+	jr	NZ, 00102$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x64
+;src/score.c:10: if (s == 0) { set_sprite_tile(id,100); }
+00102$:
+;src/score.c:11: if (s == 1) { set_sprite_tile(id,101); }
+	ld	a, d
+	dec	a
+	jr	NZ, 00104$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x65
+;src/score.c:11: if (s == 1) { set_sprite_tile(id,101); }
+00104$:
+;src/score.c:12: if (s == 2) { set_sprite_tile(id,102); }
+	ld	a, d
+	sub	a, #0x02
+	jr	NZ, 00106$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x66
+;src/score.c:12: if (s == 2) { set_sprite_tile(id,102); }
+00106$:
+;src/score.c:13: if (s == 3) { set_sprite_tile(id,103); }
+	ld	a, d
+	sub	a, #0x03
+	jr	NZ, 00108$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x67
+;src/score.c:13: if (s == 3) { set_sprite_tile(id,103); }
+00108$:
+;src/score.c:14: if (s == 4) { set_sprite_tile(id,104); }
+	ld	a, d
+	sub	a, #0x04
+	jr	NZ, 00110$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x68
+;src/score.c:14: if (s == 4) { set_sprite_tile(id,104); }
+00110$:
+;src/score.c:15: if (s == 5) { set_sprite_tile(id,105); }
+	ld	a, d
+	sub	a, #0x05
+	jr	NZ, 00112$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x69
+;src/score.c:15: if (s == 5) { set_sprite_tile(id,105); }
+00112$:
+;src/score.c:16: if (s == 6) { set_sprite_tile(id,106); }
+	ld	a, d
+	sub	a, #0x06
+	jr	NZ, 00114$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x6a
+;src/score.c:16: if (s == 6) { set_sprite_tile(id,106); }
+00114$:
+;src/score.c:17: if (s == 7) { set_sprite_tile(id,107); }
+	ld	a, d
+	sub	a, #0x07
+	jr	NZ, 00116$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x6b
+;src/score.c:17: if (s == 7) { set_sprite_tile(id,107); }
+00116$:
+;src/score.c:18: if (s == 8) { set_sprite_tile(id,108); }
+	ld	a, d
+	sub	a, #0x08
+	jr	NZ, 00118$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x6c
+;src/score.c:18: if (s == 8) { set_sprite_tile(id,108); }
+00118$:
+;src/score.c:19: if (s == 9) { set_sprite_tile(id,109); }
+	ld	a, d
+	sub	a, #0x09
+	jr	NZ, 00120$
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, bc
+	inc	hl
+	inc	hl
+	ld	(hl), #0x6d
+;src/score.c:19: if (s == 9) { set_sprite_tile(id,109); }
+00120$:
+;src/score.c:20: move_sprite(id,x,152);
+	ldhl	sp,	#2
+	ld	c, (hl)
+;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+	ld	l, e
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
+	add	hl, hl
+	add	hl, hl
+	ld	de, #_shadow_OAM
+	add	hl, de
+;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+	ld	(hl), #0x98
+	inc	hl
+	ld	(hl), c
+;src/score.c:20: move_sprite(id,x,152);
+;src/score.c:21: }
+	pop	hl
+	inc	sp
+	jp	(hl)
+;src/score.c:23: void scoreUpdate() {
+;	---------------------------------
+; Function scoreUpdate
+; ---------------------------------
+_scoreUpdate::
+;src/score.c:24: scoreDisplay(score10000, 30,  8);
+	ld	a, #0x08
+	push	af
+	inc	sp
+	ld	e, #0x1e
+	ld	a, (#_score10000)
+	call	_scoreDisplay
+;src/score.c:25: scoreDisplay(score1000,  31, 16);
+	ld	a, #0x10
+	push	af
+	inc	sp
+	ld	e, #0x1f
+	ld	a, (#_score1000)
+	call	_scoreDisplay
+;src/score.c:26: scoreDisplay(score100,   32, 24);
+	ld	a, #0x18
+	push	af
+	inc	sp
+	ld	e, #0x20
+	ld	a, (#_score100)
+	call	_scoreDisplay
+;src/score.c:27: scoreDisplay(score10,    33, 32);
+	ld	a, #0x20
+	push	af
+	inc	sp
+	ld	e, #0x21
+	ld	a, (#_score10)
+	call	_scoreDisplay
+;src/score.c:28: scoreDisplay(score1,     34, 40);
+	ld	a, #0x28
+	push	af
+	inc	sp
+	ld	e, #0x22
+	ld	a, (#_score1)
+	call	_scoreDisplay
+;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+	ld	hl, #(_shadow_OAM + 142)
+	ld	(hl), #0x64
+;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+	ld	hl, #(_shadow_OAM + 140)
+;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+	ld	a, #0x98
+	ld	(hl+), a
+	ld	(hl), #0x30
+;src/score.c:31: if (score1 >= 10) { score10 ++; score1 -= 10;}
+	ld	a, (#_score1)
+	sub	a, #0x0a
+	ret	C
+	ld	hl, #_score10
+	inc	(hl)
+	ld	hl, #_score1
+	ld	a, (hl)
+	add	a, #0xf6
+	ld	(hl), a
+;src/score.c:32: }
+	ret
+;src/score.c:34: void scoreInit() {
+;	---------------------------------
+; Function scoreInit
+; ---------------------------------
+_scoreInit::
+;src/score.c:35: score10000 = 0;
+	ld	hl, #_score10000
+	ld	(hl), #0x00
+;src/score.c:36: score1000  = 0;
+	ld	hl, #_score1000
+	ld	(hl), #0x00
+;src/score.c:37: score100   = 0;
+	ld	hl, #_score100
+	ld	(hl), #0x00
+;src/score.c:38: score10    = 0;
+	ld	hl, #_score10
+	ld	(hl), #0x00
+;src/score.c:39: score1     = 0;
+	ld	hl, #_score1
+	ld	(hl), #0x00
+;src/score.c:40: }
+	ret
+;src/game.c:10: void bulletCollision() {
+;	---------------------------------
+; Function bulletCollision
+; ---------------------------------
+_bulletCollision::
 	add	sp, #-14
-;src/game.c:11: for ( i = 0; i < NUM_BULLETS; i++) {
+;src/game.c:13: for ( i = 0; i < NUM_BULLETS; i++) {
 	ldhl	sp,	#12
 	ld	(hl), #0x00
-;src/game.c:12: for ( j = 0; j < ENEMY_SKULLS; j++) {
+;src/game.c:14: for ( j = 0; j < ENEMY_COUNT; j++) {
 00120$:
 	ldhl	sp,	#12
 	ld	c, (hl)
@@ -1972,7 +1993,7 @@ _collision::
 	ldhl	sp,	#13
 	ld	(hl), #0x00
 00109$:
-;src/game.c:13: if (skulls[j].active && 
+;src/game.c:15: if (skulls[j].active && 
 	ldhl	sp,	#13
 	ld	a, (hl)
 	ldhl	sp,	#10
@@ -2010,37 +2031,47 @@ _collision::
 	ld	a, (bc)
 	or	a, a
 	jp	Z, 00110$
-;src/game.c:14: bullets[i].x >= skulls[j].x && 
+;src/game.c:16: bullets[i].x >= skulls[j].x - 4 && 
 	ldhl	sp,#2
-	ld	a, (hl+)
-	ld	e, a
-	ld	a, (hl+)
-	ld	d, a
-	ld	a, (de)
-	ld	c, a
 	ld	a, (hl+)
 	ld	e, a
 	ld	d, (hl)
 	ld	a, (de)
-	ld	l, a
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	a, c
-	sub	a, l
-	jp	C, 00110$
-;src/game.c:15: bullets[i].x <= skulls[j].x + 8 &&
-	ld	h, #0x00
-;	spillPairReg hl
-;	spillPairReg hl
-	ld	de, #0x0008
-	add	hl, de
+	ldhl	sp,	#11
+	ld	(hl), a
+	ldhl	sp,#4
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	ld	a, (de)
+	ld	c, a
 	ld	b, #0x00
-	ld	e, b
+	ld	de, #0x0004
+	ld	a, c
+	sub	a, e
+	ld	e, a
+	ld	a, b
+	sbc	a, d
+	ldhl	sp,	#9
+	ld	(hl-), a
+	ld	(hl), e
+	ldhl	sp,	#11
+	ld	a, (hl-)
+	ld	(hl+), a
+	ld	(hl), #0x00
+	ldhl	sp,	#10
+	ld	e, l
 	ld	d, h
-	ld	a, l
-	sub	a, c
-	ld	a, h
-	sbc	a, b
+	ldhl	sp,	#8
+	ld	a, (de)
+	inc	de
+	sub	a, (hl)
+	inc	hl
+	ld	a, (de)
+	sbc	a, (hl)
+	ld	a, (de)
+	ld	d, a
+	ld	e, (hl)
 	bit	7, e
 	jr	Z, 00158$
 	bit	7, d
@@ -2053,7 +2084,33 @@ _collision::
 	scf
 00159$:
 	jp	C, 00110$
-;src/game.c:16: bullets[i].y >= skulls[j].y - 4 && 
+;src/game.c:17: bullets[i].x <= skulls[j].x + 8 &&
+	ld	hl, #0x0008
+	add	hl, bc
+	ld	c, l
+	ld	b, h
+	ldhl	sp,	#10
+	ld	a, c
+	sub	a, (hl)
+	inc	hl
+	ld	a, b
+	sbc	a, (hl)
+	ld	a, b
+	ld	d, a
+	ld	e, (hl)
+	bit	7, e
+	jr	Z, 00160$
+	bit	7, d
+	jr	NZ, 00161$
+	cp	a, a
+	jr	00161$
+00160$:
+	bit	7, d
+	jr	Z, 00161$
+	scf
+00161$:
+	jp	C, 00110$
+;src/game.c:18: bullets[i].y >= skulls[j].y - 4 && 
 	pop	de
 	push	de
 	ld	l, e
@@ -2109,18 +2166,18 @@ _collision::
 	ld	d, a
 	ld	e, (hl)
 	bit	7, e
-	jr	Z, 00160$
+	jr	Z, 00162$
 	bit	7, d
-	jr	NZ, 00161$
+	jr	NZ, 00163$
 	cp	a, a
-	jr	00161$
-00160$:
+	jr	00163$
+00162$:
 	bit	7, d
-	jr	Z, 00161$
+	jr	Z, 00163$
 	scf
-00161$:
+00163$:
 	jr	C, 00110$
-;src/game.c:17: bullets[i].y <= skulls[j].y + 4) {
+;src/game.c:19: bullets[i].y <= skulls[j].y + 4) {
 	inc	bc
 	inc	bc
 	inc	bc
@@ -2135,76 +2192,252 @@ _collision::
 	ld	d, a
 	ld	e, (hl)
 	bit	7, e
-	jr	Z, 00162$
+	jr	Z, 00164$
 	bit	7, d
-	jr	NZ, 00163$
+	jr	NZ, 00165$
 	cp	a, a
-	jr	00163$
-00162$:
+	jr	00165$
+00164$:
 	bit	7, d
-	jr	Z, 00163$
+	jr	Z, 00165$
 	scf
-00163$:
+00165$:
 	jr	C, 00110$
-;src/game.c:19: bullets[i].x = 0;
+;src/game.c:21: bullets[i].x = 0;
 	pop	hl
 	ld	(hl), #0x00
 	push	hl
-;src/game.c:20: bullets[i].y = 0; // Move bullet offscreen
+;src/game.c:22: bullets[i].y = 0; // Move bullet offscreen
 	ldhl	sp,	#6
 	ld	a,	(hl+)
 	ld	h, (hl)
 	ld	l, a
 	ld	(hl), #0x00
-;src/game.c:21: score1 ++;
+;src/game.c:23: score1 ++;
 	ld	hl, #_score1
 	inc	(hl)
-;src/game.c:22: skulls[j].x = 170; // Move enemy offscreen
+;src/game.c:24: skulls[j].x = 170; // Move enemy offscreen
 	ldhl	sp,	#4
 	ld	a,	(hl+)
 	ld	h, (hl)
 	ld	l, a
 	ld	(hl), #0xaa
-;src/game.c:23: deactivateEnemy(&skulls[j]);
+;src/game.c:25: deactivateEnemy(&skulls[j]);
 	ldhl	sp,	#4
 	ld	a, (hl+)
 	ld	e, a
 	ld	d, (hl)
 	call	_deactivateEnemy
 00110$:
-;src/game.c:12: for ( j = 0; j < ENEMY_SKULLS; j++) {
+;src/game.c:14: for ( j = 0; j < ENEMY_COUNT; j++) {
 	ldhl	sp,	#13
 	inc	(hl)
 	ld	a, (hl)
 	sub	a, #0x14
 	jp	C, 00109$
-;src/game.c:11: for ( i = 0; i < NUM_BULLETS; i++) {
+;src/game.c:13: for ( i = 0; i < NUM_BULLETS; i++) {
 	dec	hl
 	inc	(hl)
 	ld	a, (hl)
 	sub	a, #0x03
 	jp	C, 00120$
-;src/game.c:27: }
+;src/game.c:29: }
 	add	sp, #14
 	ret
-;src/game.c:29: void generalUpdate() {
+;src/game.c:31: void playerHurtCollision() {
+;	---------------------------------
+; Function playerHurtCollision
+; ---------------------------------
+_playerHurtCollision::
+	add	sp, #-7
+;src/game.c:34: for ( i = 0; i < ENEMY_COUNT; i++ ) {
+	ld	a, (#(_player + 1) + 0)
+	ldhl	sp,	#0
+	ld	(hl), a
+	ld	a, (#_player + 0)
+	ldhl	sp,	#1
+	ld	(hl), a
+	ldhl	sp,	#6
+	ld	(hl), #0x00
+00108$:
+;src/game.c:35: if (skulls[i].active && 
+	ldhl	sp,	#6
+	ld	c, (hl)
+	ld	b, #0x00
+	ld	l, c
+	ld	h, b
+	add	hl, hl
+	add	hl, hl
+	add	hl, hl
+	add	hl, hl
+	ld	a, l
+	add	a, #<(_skulls)
+	ld	c, a
+	ld	a, h
+	adc	a, #>(_skulls)
+	ld	b, a
+	ld	hl, #0x0007
+	add	hl, bc
+	ld	a, (hl)
+	or	a, a
+	jp	Z, 00109$
+;src/game.c:36: player.x >= skulls[i].x && 
+	ld	a, (bc)
+	ld	e, a
+	ldhl	sp,	#1
+	ld	a, (hl)
+	sub	a, e
+	jp	C, 00109$
+;src/game.c:37: player.x <= skulls[i].x - 8 &&
+	ldhl	sp,	#4
+	ld	a, e
+	ld	(hl+), a
+	xor	a, a
+	ld	(hl-), a
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	ld	hl, #0x0008
+	ld	a, e
+	sub	a, l
+	ld	e, a
+	ld	a, d
+	sbc	a, h
+	ldhl	sp,	#3
+	ld	(hl-), a
+	ld	a, e
+	ld	(hl-), a
+	ld	a, (hl)
+	ldhl	sp,	#4
+	ld	(hl+), a
+	ld	(hl), #0x00
+	ldhl	sp,	#2
+	ld	e, l
+	ld	d, h
+	ldhl	sp,	#4
+	ld	a, (de)
+	inc	de
+	sub	a, (hl)
+	inc	hl
+	ld	a, (de)
+	sbc	a, (hl)
+	ld	a, (de)
+	ld	d, a
+	bit	7, (hl)
+	jr	Z, 00143$
+	bit	7, d
+	jr	NZ, 00144$
+	cp	a, a
+	jr	00144$
+00143$:
+	bit	7, d
+	jr	Z, 00144$
+	scf
+00144$:
+	jr	C, 00109$
+;src/game.c:38: player.y >= skulls[i].y - 4 && 
+	inc	bc
+	inc	bc
+	ld	a, (bc)
+	ld	c, a
+	ld	b, #0x00
+	ld	de, #0x0004
+	ld	a, c
+	sub	a, e
+	ld	e, a
+	ld	a, b
+	sbc	a, d
+	ldhl	sp,	#3
+	ld	(hl-), a
+	ld	a, e
+	ld	(hl-), a
+	dec	hl
+	ld	a, (hl)
+	ldhl	sp,	#4
+	ld	(hl+), a
+	ld	(hl), #0x00
+	ldhl	sp,	#4
+	ld	e, l
+	ld	d, h
+	ldhl	sp,	#2
+	ld	a, (de)
+	inc	de
+	sub	a, (hl)
+	inc	hl
+	ld	a, (de)
+	sbc	a, (hl)
+	ld	a, (de)
+	ld	d, a
+	bit	7, (hl)
+	jr	Z, 00145$
+	bit	7, d
+	jr	NZ, 00146$
+	cp	a, a
+	jr	00146$
+00145$:
+	bit	7, d
+	jr	Z, 00146$
+	scf
+00146$:
+	jr	C, 00109$
+;src/game.c:39: player.y <= skulls[i].y + 4) {
+	inc	bc
+	inc	bc
+	inc	bc
+	inc	bc
+	ldhl	sp,	#4
+	ld	a, c
+	sub	a, (hl)
+	inc	hl
+	ld	a, b
+	sbc	a, (hl)
+	ld	a, b
+	ld	d, a
+	bit	7, (hl)
+	jr	Z, 00147$
+	bit	7, d
+	jr	NZ, 00148$
+	cp	a, a
+	jr	00148$
+00147$:
+	bit	7, d
+	jr	Z, 00148$
+	scf
+00148$:
+	jr	C, 00109$
+;src/game.c:40: score1 ++;
+	ld	hl, #_score1
+	inc	(hl)
+00109$:
+;src/game.c:34: for ( i = 0; i < ENEMY_COUNT; i++ ) {
+	ldhl	sp,	#6
+	inc	(hl)
+	ld	a, (hl)
+	sub	a, #0x14
+	jp	C, 00108$
+;src/game.c:43: }
+	add	sp, #7
+	ret
+;src/game.c:45: void generalUpdate() {
 ;	---------------------------------
 ; Function generalUpdate
 ; ---------------------------------
 _generalUpdate::
-;src/game.c:30: scoreUpdate();
+;src/game.c:46: bulletCollision();
+	call	_bulletCollision
+;src/game.c:47: playerHurtCollision();
+	call	_playerHurtCollision
+;src/game.c:48: scoreUpdate();
 	call	_scoreUpdate
-;src/game.c:31: wait_vbl_done();
-;src/game.c:32: }
+;src/game.c:49: wait_vbl_done();
+;src/game.c:50: }
 	jp	_wait_vbl_done
-;src/game.c:34: void level1() {
+;src/game.c:52: void level1() {
 ;	---------------------------------
 ; Function level1
 ; ---------------------------------
 _level1::
-;src/game.c:36: collision();
-	call	_collision
-;src/game.c:39: frame++; if (frame == 60) { seconds++; frame = 0; }
+;src/game.c:56: frame++; if (frame == 60) { seconds++; frame = 0; }
 	ld	hl, #_frame
 	inc	(hl)
 	ld	a, (hl)
@@ -2215,9 +2448,9 @@ _level1::
 	ld	hl, #_frame
 	ld	(hl), #0x00
 00102$:
-;src/game.c:41: playerUpdate();
+;src/game.c:58: playerUpdate();
 	call	_playerUpdate
-;src/game.c:42: for (i = 0; i < 5; i++) { enemyUpdate(&skulls[i]); }
+;src/game.c:59: for (i = 0; i < 5; i++) { enemyUpdate(&skulls[i]); }
 	ld	c, #0x00
 00160$:
 	ld	l, c
@@ -2241,7 +2474,17 @@ _level1::
 	ld	a, c
 	sub	a, #0x05
 	jr	C, 00160$
-;src/game.c:45: if (seconds ==  2 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
+;src/game.c:61: enemyInit(&skulls[5], 20, 150,50,SKULL_SPRITE_TILE,1); homingPattern(&skulls[5]);
+	ld	hl, #0x103
+	push	hl
+	ld	hl, #0x3296
+	push	hl
+	ld	a, #0x14
+	ld	de, #(_skulls + 80)
+	call	_enemyInit
+	ld	de, #(_skulls + 80)
+	call	_homingPattern
+;src/game.c:64: if (seconds ==  2 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x02
 	jr	NZ, 00105$
@@ -2259,7 +2502,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePattern
 00105$:
-;src/game.c:46: if (seconds ==  2 && frame == 20) { enemyInit(&skulls[1], 11, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
+;src/game.c:65: if (seconds ==  2 && frame == 20) { enemyInit(&skulls[1], 11, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x02
 	jr	NZ, 00108$
@@ -2277,7 +2520,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePattern
 00108$:
-;src/game.c:47: if (seconds ==  2 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
+;src/game.c:66: if (seconds ==  2 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x02
 	jr	NZ, 00111$
@@ -2295,7 +2538,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePattern
 00111$:
-;src/game.c:48: if (seconds ==  3 && frame ==  0) { enemyInit(&skulls[3], 13, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
+;src/game.c:67: if (seconds ==  3 && frame ==  0) { enemyInit(&skulls[3], 13, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x03
 	jr	NZ, 00114$
@@ -2313,7 +2556,7 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePattern
 00114$:
-;src/game.c:49: if (seconds ==  3 && frame == 20) { enemyInit(&skulls[4], 14, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[4], 60); }
+;src/game.c:68: if (seconds ==  3 && frame == 20) { enemyInit(&skulls[4], 14, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[4], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x03
 	jr	NZ, 00117$
@@ -2331,7 +2574,7 @@ _level1::
 	ld	de, #(_skulls + 64)
 	call	_squarePattern
 00117$:
-;src/game.c:52: if (seconds ==  8 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
+;src/game.c:71: if (seconds ==  8 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x08
 	jr	NZ, 00120$
@@ -2349,7 +2592,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePatternR
 00120$:
-;src/game.c:53: if (seconds ==  8 && frame == 20) { enemyInit(&skulls[1], 11, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
+;src/game.c:72: if (seconds ==  8 && frame == 20) { enemyInit(&skulls[1], 11, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x08
 	jr	NZ, 00123$
@@ -2367,7 +2610,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePatternR
 00123$:
-;src/game.c:54: if (seconds ==  8 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
+;src/game.c:73: if (seconds ==  8 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x08
 	jr	NZ, 00126$
@@ -2385,7 +2628,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePatternR
 00126$:
-;src/game.c:55: if (seconds ==  9 && frame ==  0) { enemyInit(&skulls[3], 13, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
+;src/game.c:74: if (seconds ==  9 && frame ==  0) { enemyInit(&skulls[3], 13, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x09
 	jr	NZ, 00129$
@@ -2403,7 +2646,7 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePatternR
 00129$:
-;src/game.c:56: if (seconds ==  9 && frame == 20) { enemyInit(&skulls[4], 14, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[4], 60); }
+;src/game.c:75: if (seconds ==  9 && frame == 20) { enemyInit(&skulls[4], 14, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[4], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x09
 	jr	NZ, 00132$
@@ -2421,7 +2664,7 @@ _level1::
 	ld	de, #(_skulls + 64)
 	call	_squarePatternR
 00132$:
-;src/game.c:59: if (seconds == 14 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
+;src/game.c:78: if (seconds == 14 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0e
 	jr	NZ, 00135$
@@ -2439,7 +2682,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePatternR
 00135$:
-;src/game.c:60: if (seconds == 14 && frame == 20) { enemyInit(&skulls[1], 11, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
+;src/game.c:79: if (seconds == 14 && frame == 20) { enemyInit(&skulls[1], 11, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0e
 	jr	NZ, 00138$
@@ -2457,7 +2700,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePattern
 00138$:
-;src/game.c:61: if (seconds == 14 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
+;src/game.c:80: if (seconds == 14 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0e
 	jr	NZ, 00141$
@@ -2475,7 +2718,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePatternR
 00141$:
-;src/game.c:62: if (seconds == 15 && frame ==  0) { enemyInit(&skulls[3], 13, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
+;src/game.c:81: if (seconds == 15 && frame ==  0) { enemyInit(&skulls[3], 13, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0f
 	jr	NZ, 00144$
@@ -2493,7 +2736,7 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePattern
 00144$:
-;src/game.c:65: if (seconds == 20 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
+;src/game.c:84: if (seconds == 20 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x14
 	jr	NZ, 00147$
@@ -2511,7 +2754,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePattern
 00147$:
-;src/game.c:66: if (seconds == 20 && frame == 20) { enemyInit(&skulls[1], 11, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
+;src/game.c:85: if (seconds == 20 && frame == 20) { enemyInit(&skulls[1], 11, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x14
 	jr	NZ, 00150$
@@ -2529,7 +2772,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePatternR
 00150$:
-;src/game.c:67: if (seconds == 20 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
+;src/game.c:86: if (seconds == 20 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x14
 	jr	NZ, 00153$
@@ -2547,7 +2790,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePattern
 00153$:
-;src/game.c:68: if (seconds == 21 && frame ==  0) { enemyInit(&skulls[3], 13, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
+;src/game.c:87: if (seconds == 21 && frame ==  0) { enemyInit(&skulls[3], 13, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x15
 	jr	NZ, 00156$
@@ -2565,76 +2808,74 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePatternR
 00156$:
-;src/game.c:70: if (seconds == 25) { seconds = 0; }
+;src/game.c:89: if (seconds == 25) { seconds = 0; }
 	ld	a, (#_seconds)
 	sub	a, #0x19
 	ret	NZ
 	ld	hl, #_seconds
 	ld	(hl), #0x00
-;src/game.c:71: }
+;src/game.c:90: }
 	ret
-;src/game.c:73: uint8_t game() {
+;src/game.c:92: uint8_t game() {
 ;	---------------------------------
 ; Function game
 ; ---------------------------------
 _game::
-;src/game.c:75: collision();
-	call	_collision
-;src/game.c:77: scoreInit();
+;src/game.c:96: scoreInit();
 	call	_scoreInit
-;src/game.c:78: playerInit();
+;src/game.c:97: playerInit();
 	call	_playerInit
-;src/game.c:79: seconds = 0;
+;src/game.c:98: seconds = 0;
 	ld	hl, #_seconds
 	ld	(hl), #0x00
-;src/game.c:80: frame = 0;
+;src/game.c:99: frame = 0;
 	ld	hl, #_frame
 	ld	(hl), #0x00
-;src/game.c:82: level1_bkg_init();
+;src/game.c:101: level1_bkg_init();
 	call	_level1_bkg_init
-;src/game.c:84: while(currentlevel = 1) {
+;src/game.c:103: while(currentlevel = 1) {
 00101$:
-;src/game.c:85: generalUpdate();
+;src/game.c:104: generalUpdate();
 	call	_generalUpdate
-;src/game.c:86: level1();
+;src/game.c:105: level1();
 	call	_level1
-;src/game.c:87: level1_bkg_update();
+;src/game.c:106: level1_bkg_update();
 	call	_level1_bkg_update
-;src/game.c:97: }
+;src/game.c:116: }
 	jr	00101$
-;src/main.c:13: void main() {
+;src/main.c:12: void main() {
 ;	---------------------------------
 ; Function main
 ; ---------------------------------
 _main::
-;src/main.c:15: SHOW_BKG;
+;src/main.c:14: SHOW_BKG;
 	ldh	a, (_LCDC_REG + 0)
 	or	a, #0x01
 	ldh	(_LCDC_REG + 0), a
-;src/main.c:16: SHOW_SPRITES;
+;src/main.c:15: SHOW_SPRITES;
 	ldh	a, (_LCDC_REG + 0)
 	or	a, #0x02
 	ldh	(_LCDC_REG + 0), a
-;src/main.c:17: DISPLAY_ON;	
+;src/main.c:16: DISPLAY_ON;	
 	ldh	a, (_LCDC_REG + 0)
 	or	a, #0x80
 	ldh	(_LCDC_REG + 0), a
-;src/main.c:18: set_sprite_data ( 0, 128, sprites);
+;src/main.c:17: set_sprite_data ( 0, 128, sprites);
 	ld	de, #_sprites
 	push	de
 	ld	hl, #0x8000
 	push	hl
 	call	_set_sprite_data
 	add	sp, #4
-;src/main.c:19: scoreInit();
+;src/main.c:18: scoreInit();
 	call	_scoreInit
-;src/main.c:22: state       = 0;
+;src/main.c:21: state       = 0;
 	ld	hl, #_state
 	ld	(hl), #0x00
-;src/main.c:23: selection   = 1;
+;src/main.c:22: selection   = 1;
 	ld	hl, #_selection
 	ld	(hl), #0x01
-;src/main.c:24: set_bkg_tiles   ( 0 , 0, 20, 18 , titleScreen);
+;src/main.c:23: set_bkg_tiles   ( 0 , 0, 20, 18 , titleScreen);
 	ld	de, #_titleScreen
 	push	de
 	ld	hl, #0x1214
@@ -2644,7 +2885,7 @@ _main::
 	push	af
 	call	_set_bkg_tiles
 	add	sp, #6
-;src/main.c:25: set_bkg_data    ( 0 , 127, titleSprites);
+;src/main.c:24: set_bkg_data    ( 0 , 127, titleSprites);
 	ld	de, #_titleSprites
 	push	de
 	ld	hl, #0x7f00
@@ -2654,40 +2895,40 @@ _main::
 ;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
 	ld	hl, #(_shadow_OAM + 2)
 	ld	(hl), #0x01
-;src/main.c:29: while(state == 0) {
+;src/main.c:28: while(state == 0) {
 00117$:
 	ld	a, (#_state)
 	or	a, a
 	jr	NZ, 00120$
-;src/main.c:38: if (joypad() & J_DOWN)  { selection ++; }
+;src/main.c:37: if (joypad() & J_DOWN)  { selection ++; }
 	call	_joypad
 	bit	3, a
 	jr	Z, 00102$
 	ld	hl, #_selection
 	inc	(hl)
 00102$:
-;src/main.c:39: if (joypad() & J_UP  )  { selection --; }
+;src/main.c:38: if (joypad() & J_UP  )  { selection --; }
 	call	_joypad
 	bit	2, a
 	jr	Z, 00104$
 	ld	hl, #_selection
 	dec	(hl)
 00104$:
-;src/main.c:42: if (selection == 0)     { selection = 1;}
+;src/main.c:41: if (selection == 0)     { selection = 1;}
 	ld	hl, #_selection
 	ld	a, (hl)
 	or	a, a
 	jr	NZ, 00106$
 	ld	(hl), #0x01
 00106$:
-;src/main.c:43: if (selection == 4)     { selection = 3;}
+;src/main.c:42: if (selection == 4)     { selection = 3;}
 	ld	a, (#_selection)
 	sub	a, #0x04
 	jr	NZ, 00108$
 	ld	hl, #_selection
 	ld	(hl), #0x03
 00108$:
-;src/main.c:46: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
+;src/main.c:45: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
 	ld	a, (#_selection)
 	dec	a
 	jr	NZ, 00112$
@@ -2697,7 +2938,7 @@ _main::
 	ld	(hl), #0x70
 	inc	hl
 	ld	(hl), #0x64
-;src/main.c:46: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
+;src/main.c:45: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
 	call	_joypad
 	bit	4, a
 	jr	Z, 00112$
@@ -2705,7 +2946,7 @@ _main::
 	ld	(hl), #0x01
 	jr	00120$
 00112$:
-;src/main.c:47: if (selection == 2) { move_sprite (0, 100, 128); }
+;src/main.c:46: if (selection == 2) { move_sprite (0, 100, 128); }
 	ld	a, (#_selection)
 	sub	a, #0x02
 	jr	NZ, 00114$
@@ -2715,9 +2956,9 @@ _main::
 	ld	a, #0x80
 	ld	(hl+), a
 	ld	(hl), #0x64
-;src/main.c:47: if (selection == 2) { move_sprite (0, 100, 128); }
+;src/main.c:46: if (selection == 2) { move_sprite (0, 100, 128); }
 00114$:
-;src/main.c:48: if (selection == 3) { move_sprite (0, 100, 144); }
+;src/main.c:47: if (selection == 3) { move_sprite (0, 100, 144); }
 	ld	a, (#_selection)
 	sub	a, #0x03
 	jr	NZ, 00116$
@@ -2727,22 +2968,22 @@ _main::
 	ld	a, #0x90
 	ld	(hl+), a
 	ld	(hl), #0x64
-;src/main.c:48: if (selection == 3) { move_sprite (0, 100, 144); }
+;src/main.c:47: if (selection == 3) { move_sprite (0, 100, 144); }
 00116$:
-;src/main.c:51: delay(200);
+;src/main.c:50: delay(200);
 	ld	de, #0x00c8
 	call	_delay
 	jr	00117$
-;src/main.c:55: while (state == 1) { 
+;src/main.c:54: while (state == 1) { 
 00120$:
 	ld	a, (#_state)
 	dec	a
 	ret	NZ
-;src/main.c:56: scoreUpdate();
+;src/main.c:55: scoreUpdate();
 	call	_scoreUpdate
-;src/main.c:57: game(); 
+;src/main.c:56: game(); 
 	call	_game
-;src/main.c:62: }
+;src/main.c:61: }
 	jr	00120$
 	.area _CODE
 	.area _INITIALIZER
