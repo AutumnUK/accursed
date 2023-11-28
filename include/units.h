@@ -1,5 +1,5 @@
-#ifndef ENEMY_H
-#define ENEMY_H
+#ifndef UNITS_H
+#define UNITS_H
 
 #include <gb/gb.h>
 
@@ -22,5 +22,22 @@ struct Enemy {
     BOOLEAN active;
 
     struct 	Node node[NODES];
+};
+
+struct Player {
+    uint8_t x,
+            y,
+            id;
+    BOOLEAN shooting;
+};
+
+struct PlayerBullet {
+    uint8_t x,
+            y,
+            id,
+            tile;
+
+    BOOLEAN ready;
+    
 };
 #endif

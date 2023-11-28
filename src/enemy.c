@@ -4,7 +4,7 @@
 // Define patterns that can be used by a specific enemy
 
 #include <gb/gb.h>
-#include "../include/enemy.h"
+#include "../include/units.h"
 
 #define SKULL_SPRITE_TILE   3
 #define MAX_SCREEN_X        160
