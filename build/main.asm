@@ -1,6 +1,6 @@
 ;--------------------------------------------------------
 ; File Created by SDCC : free open source ISO C Compiler 
-; Version 4.2.2 #13350 (MINGW64)
+; Version 4.3.2 #14228 (MINGW64)
 ;--------------------------------------------------------
 	.module main
 	.optsdcc -msm83
@@ -9,6 +9,7 @@
 ; Public variables in this module
 ;--------------------------------------------------------
 	.globl _main
+	.globl _startup
 	.globl _game
 	.globl _level1
 	.globl _generalUpdate
@@ -36,7 +37,7 @@
 	.globl _set_sprite_data
 	.globl _set_bkg_tiles
 	.globl _set_bkg_data
-	.globl _wait_vbl_done
+	.globl _vsync
 	.globl _set_interrupts
 	.globl _joypad
 	.globl _delay
@@ -139,7 +140,7 @@ _sprites::
 ; code
 ;--------------------------------------------------------
 	.area _CODE
-;src/level1_background.c:10: void interruptLCD() {
+;src/level1_background.c:10: void interruptLCD(void) {
 ;	---------------------------------
 ; Function interruptLCD
 ; ---------------------------------
@@ -157,7 +158,7 @@ _interruptLCD::
 00101$:
 	ld	a, (#_background_offset_1)
 	ldh	(_SCX_REG + 0), a
-;c:/gbdk/include/gb/gb.h:1208: SCX_REG=x, SCY_REG=y;
+;c:\gbdk\include\gb\gb.h:1378: SCX_REG=x, SCY_REG=y;
 	xor	a, a
 	ldh	(_SCY_REG + 0), a
 ;src/level1_background.c:12: case 0x00: move_bkg(background_offset_1,0); LYC_REG = 0x68; break;
@@ -168,7 +169,7 @@ _interruptLCD::
 00102$:
 	ld	a, (#_background_offset_2)
 	ldh	(_SCX_REG + 0), a
-;c:/gbdk/include/gb/gb.h:1208: SCX_REG=x, SCY_REG=y;
+;c:\gbdk\include\gb\gb.h:1378: SCX_REG=x, SCY_REG=y;
 	xor	a, a
 	ldh	(_SCY_REG + 0), a
 ;src/level1_background.c:13: case 0x68: move_bkg(background_offset_2,0); LYC_REG = 0x70; break;
@@ -179,7 +180,7 @@ _interruptLCD::
 00103$:
 	ld	a, (#_background_offset_3)
 	ldh	(_SCX_REG + 0), a
-;c:/gbdk/include/gb/gb.h:1208: SCX_REG=x, SCY_REG=y;
+;c:\gbdk\include\gb\gb.h:1378: SCX_REG=x, SCY_REG=y;
 	xor	a, a
 	ldh	(_SCY_REG + 0), a
 ;src/level1_background.c:14: case 0x70: move_bkg(background_offset_3,0); LYC_REG = 0x00; break;
@@ -397,7 +398,7 @@ _level1_tiles:
 	.db #0xff	; 255
 	.db #0xff	; 255
 	.db #0xff	; 255
-;src/level1_background.c:18: void level1_bkg_init() {
+;src/level1_background.c:18: void level1_bkg_init(void) {
 ;	---------------------------------
 ; Function level1_bkg_init
 ; ---------------------------------
@@ -428,29 +429,23 @@ _level1_bkg_init::
 ;src/level1_background.c:23: LYC_REG  = 0x00; // First line. ( 00 / 78 / 80 )
 	ld	a, #0x00
 	ldh	(_LYC_REG + 0), a
-;c:/gbdk/include/gb/gb.h:743: __asm__("di");
+;c:\gbdk\include\gb\gb.h:754: __asm__("di");
 	di
 ;src/level1_background.c:25: add_LCD(interruptLCD);
 	ld	de, #_interruptLCD
-	push	de
 	call	_add_LCD
-	inc	sp
-	inc	sp
-;c:/gbdk/include/gb/gb.h:727: __asm__("ei");
+;c:\gbdk\include\gb\gb.h:738: __asm__("ei");
 	ei
 ;src/level1_background.c:27: set_interrupts(VBL_IFLAG | LCD_IFLAG);
 	ld	a, #0x03
-	push	af
-	inc	sp
 	call	_set_interrupts
-	inc	sp
 ;src/level1_background.c:28: SHOW_BKG;
 	ldh	a, (_LCDC_REG + 0)
 	or	a, #0x01
 	ldh	(_LCDC_REG + 0), a
 ;src/level1_background.c:29: }
 	ret
-;src/level1_background.c:31: void level1_bkg_update() {
+;src/level1_background.c:31: void level1_bkg_update(void) {
 ;	---------------------------------
 ; Function level1_bkg_update
 ; ---------------------------------
@@ -480,7 +475,7 @@ _level1_bkg_update::
 	ld	(hl), #0x00
 ;src/level1_background.c:39: }
 	ret
-;src/enemy.c:11: void moveEnemy(struct Enemy * m)		{ move_sprite( m-> id , m -> x , m -> y); }
+;src/enemy.c:16: void moveEnemy(struct Enemy * m)		{ move_sprite( m-> id , m -> x , m -> y); }
 ;	---------------------------------
 ; Function moveEnemy
 ; ---------------------------------
@@ -498,7 +493,7 @@ _moveEnemy::
 	ld	c, a
 	ld	hl, #0x0004
 	add	hl, de
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	l, (hl)
 ;	spillPairReg hl
 ;	spillPairReg hl
@@ -509,13 +504,13 @@ _moveEnemy::
 	add	hl, hl
 	ld	de, #_shadow_OAM
 	add	hl, de
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ld	a, b
 	ld	(hl+), a
 	ld	(hl), c
-;src/enemy.c:11: void moveEnemy(struct Enemy * m)		{ move_sprite( m-> id , m -> x , m -> y); }
+;src/enemy.c:16: void moveEnemy(struct Enemy * m)		{ move_sprite( m-> id , m -> x , m -> y); }
 	ret
-;src/enemy.c:12: void activateEnemy(struct Enemy * m)	{ m -> active = 1; }
+;src/enemy.c:17: void activateEnemy(struct Enemy * m)	{ m -> active = 1; }
 ;	---------------------------------
 ; Function activateEnemy
 ; ---------------------------------
@@ -524,7 +519,7 @@ _activateEnemy::
 	add	hl, de
 	ld	(hl), #0x01
 	ret
-;src/enemy.c:13: void deactivateEnemy(struct Enemy * m)	{ m -> active = 0; }
+;src/enemy.c:18: void deactivateEnemy(struct Enemy * m)	{ m -> active = 0; }
 ;	---------------------------------
 ; Function deactivateEnemy
 ; ---------------------------------
@@ -533,7 +528,7 @@ _deactivateEnemy::
 	add	hl, de
 	ld	(hl), #0x00
 	ret
-;src/enemy.c:15: void goToNode(struct Enemy * m, struct Node * n) {
+;src/enemy.c:19: void goToNode(struct Enemy * m, struct Node * n) {
 ;	---------------------------------
 ; Function goToNode
 ; ---------------------------------
@@ -544,7 +539,7 @@ _goToNode::
 	ld	h, d
 ;	spillPairReg hl
 ;	spillPairReg hl
-;src/enemy.c:16: if ( m -> x > n -> x) { m -> x --; }    // If monster x > node x. Mode left.
+;src/enemy.c:20: if ( m -> x > n -> x) { m -> x --; }    // If monster x > node x. Mode left.
 	ld	e, (hl)
 	ld	a, (bc)
 	sub	a, e
@@ -553,7 +548,7 @@ _goToNode::
 	ld	(hl), e
 00102$:
 	ld	e, (hl)
-;src/enemy.c:17: if ( m -> x < n -> x) { m -> x ++; }    // If monster x < ndoe x. Move right.
+;src/enemy.c:21: if ( m -> x < n -> x) { m -> x ++; }    // If monster x < ndoe x. Move right.
 	ld	a, (bc)
 	ld	d, a
 	ld	a, e
@@ -562,7 +557,7 @@ _goToNode::
 	inc	e
 	ld	(hl), e
 00104$:
-;src/enemy.c:18: if ( m -> y > n -> y) { m -> y --; }    // If monster y > node y. Move up.
+;src/enemy.c:22: if ( m -> y > n -> y) { m -> y --; }    // If monster y > node y. Move up.
 	inc	hl
 	inc	hl
 	ld	e, (hl)
@@ -574,7 +569,7 @@ _goToNode::
 	ld	(hl), e
 00106$:
 	ld	e, (hl)
-;src/enemy.c:19: if ( m -> y < n -> y) { m -> y ++; }    // If monster y < node y. Move down.
+;src/enemy.c:23: if ( m -> y < n -> y) { m -> y ++; }    // If monster y < node y. Move down.
 	ld	a, (bc)
 	ld	c, a
 	ld	a, e
@@ -582,9 +577,9 @@ _goToNode::
 	ret	NC
 	inc	e
 	ld	(hl), e
-;src/enemy.c:20: }
+;src/enemy.c:24: }
 	ret
-;src/enemy.c:22: void enemyInit(struct Enemy * m, uint8_t id, uint8_t x, uint8_t y, uint8_t sprite, uint8_t h) {
+;src/enemy.c:26: void enemyInit(struct Enemy * m, uint8_t id, uint8_t x, uint8_t y, uint8_t sprite, uint8_t hp) {
 ;	---------------------------------
 ; Function enemyInit
 ; ---------------------------------
@@ -592,19 +587,19 @@ _enemyInit::
 	dec	sp
 	ldhl	sp,	#0
 	ld	(hl), a
-;src/enemy.c:23: m -> active 		=	1;
+;src/enemy.c:27: m -> active 		=	1;
 	ld	hl, #0x0007
 	add	hl, de
 	ld	(hl), #0x01
-;src/enemy.c:24: m -> x      		=	x;
+;src/enemy.c:28: m -> x      		=	x;
 	ldhl	sp,	#3
 	ld	a, (hl)
 	ld	(de), a
-;src/enemy.c:25: m -> startx 		=	x;
+;src/enemy.c:29: m -> startx 		=	x;
 	ld	c, e
 	ld	b, d
 	inc	bc
-;src/enemy.c:26: m -> y      		=	y;
+;src/enemy.c:30: m -> y      		=	y;
 	ld	a, (hl+)
 	ld	(bc), a
 	ld	c, e
@@ -613,7 +608,7 @@ _enemyInit::
 	inc	bc
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:27: m -> starty 		=	y;
+;src/enemy.c:31: m -> starty 		=	y;
 	ld	c, e
 	ld	b, d
 	inc	bc
@@ -621,7 +616,7 @@ _enemyInit::
 	inc	bc
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:28: m -> id     		=	id;
+;src/enemy.c:32: m -> id     		=	id;
 	ld	hl, #0x0004
 	add	hl, de
 	ld	c, l
@@ -629,40 +624,43 @@ _enemyInit::
 	ldhl	sp,	#0
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:29: m -> currentNode 	= 	0;
+;src/enemy.c:33: m -> currentNode 	= 	0;
 	ld	hl, #0x0005
 	add	hl, de
 	ld	(hl), #0x00
-;src/enemy.c:30: m -> health         =   h;
+;src/enemy.c:34: m -> health         =   hp;
 	ld	hl, #0x0006
 	add	hl, de
-	ld	c, l
-	ld	b, h
+	ld	e, l
+	ld	d, h
 	ldhl	sp,	#6
-;src/enemy.c:31: set_sprite_tile(m -> id , sprite);
+;src/enemy.c:35: set_sprite_tile(m -> id , sprite);
 	ld	a, (hl-)
-	ld	(bc), a
-	ld	c, (hl)
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
-	ld	de, #_shadow_OAM+0
-	ldhl	sp,	#0
-	ld	a, (hl)
-	ld	b, #0x00
-	ld	l, a
-	ld	h, b
+	ld	(de), a
+	ld	e, (hl)
+	ld	a, (bc)
+	ld	d, a
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
+	ld	bc, #_shadow_OAM+0
+	ld	l, d
+;	spillPairReg hl
+;	spillPairReg hl
+	ld	h, #0x00
+;	spillPairReg hl
+;	spillPairReg hl
 	add	hl, hl
 	add	hl, hl
-	add	hl, de
+	add	hl, bc
 	inc	hl
 	inc	hl
-	ld	(hl), c
-;src/enemy.c:31: set_sprite_tile(m -> id , sprite);
-;src/enemy.c:32: }
+	ld	(hl), e
+;src/enemy.c:35: set_sprite_tile(m -> id , sprite);
+;src/enemy.c:36: }
 	inc	sp
 	pop	hl
 	add	sp, #4
 	jp	(hl)
-;src/enemy.c:34: void enemyUpdate(struct Enemy * m) {
+;src/enemy.c:38: void enemyUpdate(struct Enemy * m) {
 ;	---------------------------------
 ; Function enemyUpdate
 ; ---------------------------------
@@ -671,7 +669,7 @@ _enemyUpdate::
 	ldhl	sp,	#12
 	ld	a, e
 	ld	(hl+), a
-;src/enemy.c:36: if ( m -> active) { 
+;src/enemy.c:40: if ( m -> active) { 
 	ld	a, d
 	ld	(hl-), a
 	ld	a, (hl+)
@@ -686,7 +684,7 @@ _enemyUpdate::
 	push	de
 	ld	a, (de)
 	ldhl	sp,	#11
-;src/enemy.c:38: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
+;src/enemy.c:42: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
 	ld	(hl+), a
 	ld	a, (hl+)
 	ld	e, a
@@ -701,18 +699,18 @@ _enemyUpdate::
 	ld	a, h
 	ldhl	sp,	#3
 	ld	(hl), a
-;src/enemy.c:36: if ( m -> active) { 
+;src/enemy.c:40: if ( m -> active) { 
 	ldhl	sp,	#11
 	ld	a, (hl)
 	or	a, a
 	jp	Z, 00107$
-;src/enemy.c:37: moveEnemy(m);
+;src/enemy.c:41: moveEnemy(m);
 	inc	hl
 	ld	a, (hl+)
 	ld	e, a
 	ld	d, (hl)
 	call	_moveEnemy
-;src/enemy.c:38: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
+;src/enemy.c:42: if ( m -> x == m -> node[ m -> currentNode ].x && m -> y == m -> node [ m -> currentNode ].y) { m -> currentNode ++; }
 	ldhl	sp,#12
 	ld	a, (hl+)
 	ld	e, a
@@ -808,7 +806,7 @@ _enemyUpdate::
 	ld	h, a
 	ld	(hl), c
 00102$:
-;src/enemy.c:39: goToNode (m, & m -> node[m -> currentNode]);
+;src/enemy.c:43: goToNode (m, & m -> node[m -> currentNode]);
 	ldhl	sp,#7
 	ld	a, (hl+)
 	ld	e, a
@@ -829,7 +827,7 @@ _enemyUpdate::
 	ld	e, a
 	ld	d, (hl)
 	call	_goToNode
-;src/enemy.c:40: if (m -> currentNode == 4) { m -> active = 0; }
+;src/enemy.c:44: if (m -> currentNode == 4) { m -> active = 0; }
 	ldhl	sp,#7
 	ld	a, (hl+)
 	ld	e, a
@@ -841,54 +839,54 @@ _enemyUpdate::
 	ld	(hl), #0x00
 	push	hl
 00107$:
-;src/enemy.c:44: if ( m -> active == 0 ) {
+;src/enemy.c:48: if ( m -> active == 0 ) {
 	pop	de
 	push	de
 	ld	a, (de)
 	or	a, a
 	jr	NZ, 00110$
-;src/enemy.c:45: m -> x = 0;
+;src/enemy.c:49: m -> x = 0;
 	ldhl	sp,	#12
 	ld	a,	(hl+)
 	ld	h, (hl)
 	ld	l, a
 	ld	(hl), #0x00
-;src/enemy.c:46: m -> y = 0;
+;src/enemy.c:50: m -> y = 0;
 	ldhl	sp,	#2
 	ld	a,	(hl+)
 	ld	h, (hl)
 	ld	l, a
 	ld	(hl), #0x00
-;src/enemy.c:47: moveEnemy(m);
+;src/enemy.c:51: moveEnemy(m);
 	ldhl	sp,	#12
 	ld	a, (hl+)
 	ld	e, a
 	ld	d, (hl)
 	call	_moveEnemy
 00110$:
-;src/enemy.c:49: }
+;src/enemy.c:53: }
 	add	sp, #14
 	ret
-;src/enemy.c:51: void homingPattern(struct Enemy * m) {
+;src/enemy.c:57: void homingPattern(struct Enemy * m) {
 ;	---------------------------------
 ; Function homingPattern
 ; ---------------------------------
 _homingPattern::
-;src/enemy.c:52: m -> node[0].x = m -> x;
+;src/enemy.c:58: m -> node[0].x = m -> x;
 	ld	hl, #0x0008
 	add	hl, de
 	ld	a, (de)
 	ld	(hl), a
-;src/enemy.c:53: m -> node[0].y = m -> y;
+;src/enemy.c:59: m -> node[0].y = m -> y;  
 	ld	hl,#0x9
 	add	hl,de
 	inc	de
 	inc	de
 	ld	a, (de)
 	ld	(hl), a
-;src/enemy.c:55: }
+;src/enemy.c:60: }
 	ret
-;src/enemy.c:57: void squarePattern(struct Enemy * m, uint8_t distance) {	
+;src/enemy.c:62: void squarePattern(struct Enemy * m, uint8_t distance) {	
 ;	---------------------------------
 ; Function squarePattern
 ; ---------------------------------
@@ -900,7 +898,7 @@ _squarePattern::
 	ld	(hl), d
 	dec	hl
 	dec	hl
-;src/enemy.c:58: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
+;src/enemy.c:63: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
 	ld	(hl+), a
 	ld	a, (hl+)
 	ld	e, a
@@ -915,18 +913,15 @@ _squarePattern::
 	ld	b, (hl)
 	inc	bc
 	ld	a, (bc)
-	ldhl	sp,	#5
-	ld	(hl+), a
-	inc	hl
 	ld	(de), a
 	ld	c, e
 	ld	b, d
 	inc	bc
-	ld	a, (hl+)
-	ld	h, (hl)
 ;	spillPairReg hl
 ;	spillPairReg hl
-	ld	l, a
+	ld	a, (hl-)
+	ld	l, (hl)
+	ld	h, a
 ;	spillPairReg hl
 ;	spillPairReg hl
 	inc	hl
@@ -934,13 +929,13 @@ _squarePattern::
 	inc	hl
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:59: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
+;src/enemy.c:64: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
 	ld	c, e
 	ld	b, d
 	inc	bc
 	inc	bc
-	ldhl	sp,	#5
-	ld	a, (hl+)
+	ld	a, (de)
+	ldhl	sp,	#6
 	sub	a, (hl)
 	inc	hl
 	ld	(de), a
@@ -966,10 +961,8 @@ _squarePattern::
 	push	hl
 	inc	hl
 	ld	a, (hl)
-	ldhl	sp,#5
-	ld	(hl), a
 	ld	(bc), a
-;src/enemy.c:60: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y += distance;    // Move Down
+;src/enemy.c:65: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y += distance;    // Move Down
 	push	de
 	ldhl	sp,#2
 	ld	a, (hl+)
@@ -985,39 +978,50 @@ _squarePattern::
 	pop	hl
 	ld	a, h
 	ldhl	sp,	#3
-	ld	(hl+), a
-	ld	a, (de)
 	ld	(hl-), a
-	dec	hl
-	ld	a, (hl+)
-	ld	e, a
-	ld	a, (hl+)
-	ld	d, a
-	ld	a, (hl)
-	ld	(de), a
+	ld	a, (de)
+	push	af
+	ld	a,	(hl+)
+	ld	h, (hl)
+	ld	l, a
+	pop	af
+	ld	(hl), a
 	pop	de
 	push	de
 	ld	hl, #0x0005
 	add	hl, de
-	ld	e, l
-	ld	d, h
+	push	hl
+	ld	a, l
+	ldhl	sp,	#6
+	ld	(hl), a
+	pop	hl
+	ld	a, h
 	ldhl	sp,	#5
-	ld	a, (hl+)
+	ld	(hl+), a
+	ld	a, (bc)
 	add	a, (hl)
 	dec	hl
-	ld	(hl), a
+	dec	hl
 	ld	(bc), a
-	ld	(de), a
-;src/enemy.c:61: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
+	push	af
+	ld	a,	(hl+)
+	ld	h, (hl)
+	ld	l, a
+	pop	af
+	ld	(hl), a
+;src/enemy.c:66: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
 	pop	de
 	push	de
 	ld	hl, #0x0006
 	add	hl, de
 	ld	c, l
 	ld	b, h
-	ldhl	sp,	#4
+	ldhl	sp,#2
 	ld	a, (hl+)
-	inc	hl
+	ld	e, a
+	ld	d, (hl)
+	ld	a, (de)
+	ldhl	sp,	#6
 	add	a, (hl)
 	ldhl	sp,	#2
 	push	af
@@ -1033,13 +1037,16 @@ _squarePattern::
 	add	hl, de
 	ld	c, l
 	ld	b, h
-	ldhl	sp,	#5
-	ld	a, (hl)
+	ldhl	sp,#4
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	ld	a, (de)
 	ld	(bc), a
-;src/enemy.c:62: }
+;src/enemy.c:67: }
 	add	sp, #9
 	ret
-;src/enemy.c:64: void squarePatternR(struct Enemy * m, uint8_t distance) {	
+;src/enemy.c:69: void squarePatternR(struct Enemy * m, uint8_t distance) {	
 ;	---------------------------------
 ; Function squarePatternR
 ; ---------------------------------
@@ -1051,7 +1058,7 @@ _squarePatternR::
 	ld	(hl), d
 	dec	hl
 	dec	hl
-;src/enemy.c:65: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
+;src/enemy.c:70: m -> node[0].x = m -> startx;                   m -> node[0].y = m -> starty;                   // Start
 	ld	(hl+), a
 	ld	a, (hl+)
 	ld	e, a
@@ -1066,18 +1073,15 @@ _squarePatternR::
 	ld	b, (hl)
 	inc	bc
 	ld	a, (bc)
-	ldhl	sp,	#5
-	ld	(hl+), a
-	inc	hl
 	ld	(de), a
 	ld	c, e
 	ld	b, d
 	inc	bc
-	ld	a, (hl+)
-	ld	h, (hl)
 ;	spillPairReg hl
 ;	spillPairReg hl
-	ld	l, a
+	ld	a, (hl-)
+	ld	l, (hl)
+	ld	h, a
 ;	spillPairReg hl
 ;	spillPairReg hl
 	inc	hl
@@ -1085,13 +1089,13 @@ _squarePatternR::
 	inc	hl
 	ld	a, (hl)
 	ld	(bc), a
-;src/enemy.c:66: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
+;src/enemy.c:71: m -> node[1].x = m -> node[0].x -= distance;    m -> node[1].y = m -> node[0].y;                // Move Left
 	ld	c, e
 	ld	b, d
 	inc	bc
 	inc	bc
-	ldhl	sp,	#5
-	ld	a, (hl+)
+	ld	a, (de)
+	ldhl	sp,	#6
 	sub	a, (hl)
 	inc	hl
 	ld	(de), a
@@ -1117,10 +1121,8 @@ _squarePatternR::
 	push	hl
 	inc	hl
 	ld	a, (hl)
-	ldhl	sp,#5
-	ld	(hl), a
 	ld	(bc), a
-;src/enemy.c:67: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y -= distance;    // Move Up
+;src/enemy.c:72: m -> node[2].x = m -> node[1].x;                m -> node[2].y = m -> node[1].y -= distance;    // Move Up
 	push	de
 	ldhl	sp,#2
 	ld	a, (hl+)
@@ -1136,39 +1138,50 @@ _squarePatternR::
 	pop	hl
 	ld	a, h
 	ldhl	sp,	#3
-	ld	(hl+), a
-	ld	a, (de)
 	ld	(hl-), a
-	dec	hl
-	ld	a, (hl+)
-	ld	e, a
-	ld	a, (hl+)
-	ld	d, a
-	ld	a, (hl)
-	ld	(de), a
+	ld	a, (de)
+	push	af
+	ld	a,	(hl+)
+	ld	h, (hl)
+	ld	l, a
+	pop	af
+	ld	(hl), a
 	pop	de
 	push	de
 	ld	hl, #0x0005
 	add	hl, de
-	ld	e, l
-	ld	d, h
+	push	hl
+	ld	a, l
+	ldhl	sp,	#6
+	ld	(hl), a
+	pop	hl
+	ld	a, h
 	ldhl	sp,	#5
-	ld	a, (hl+)
+	ld	(hl+), a
+	ld	a, (bc)
 	sub	a, (hl)
 	dec	hl
-	ld	(hl), a
+	dec	hl
 	ld	(bc), a
-	ld	(de), a
-;src/enemy.c:68: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
+	push	af
+	ld	a,	(hl+)
+	ld	h, (hl)
+	ld	l, a
+	pop	af
+	ld	(hl), a
+;src/enemy.c:73: m -> node[3].x = m -> node[2].x += distance;    m -> node[3].y = m -> node[2].y;                // Move Right
 	pop	de
 	push	de
 	ld	hl, #0x0006
 	add	hl, de
 	ld	c, l
 	ld	b, h
-	ldhl	sp,	#4
+	ldhl	sp,#2
 	ld	a, (hl+)
-	inc	hl
+	ld	e, a
+	ld	d, (hl)
+	ld	a, (de)
+	ldhl	sp,	#6
 	add	a, (hl)
 	ldhl	sp,	#2
 	push	af
@@ -1184,13 +1197,16 @@ _squarePatternR::
 	add	hl, de
 	ld	c, l
 	ld	b, h
-	ldhl	sp,	#5
-	ld	a, (hl)
+	ldhl	sp,#4
+	ld	a, (hl+)
+	ld	e, a
+	ld	d, (hl)
+	ld	a, (de)
 	ld	(bc), a
-;src/enemy.c:69: }
+;src/enemy.c:74: }
 	add	sp, #9
 	ret
-;src/player.c:18: void playerInit() {
+;src/player.c:18: void playerInit(void) {
 ;	---------------------------------
 ; Function playerInit
 ; ---------------------------------
@@ -1289,12 +1305,9 @@ _playerInit::
 	inc	hl
 	ld	(hl), #0x02
 ;src/player.c:32: set_sprite_tile(bullets[i].id, bullets[i].tile);
-	ld	a, (hl)
-	ldhl	sp,	#3
-	ld	(hl), a
 	ld	a, (de)
 	ld	e, a
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	h, #0x00
 ;	spillPairReg hl
 ;	spillPairReg hl
@@ -1305,11 +1318,7 @@ _playerInit::
 	add	hl, de
 	inc	hl
 	inc	hl
-	ld	e, l
-	ld	d, h
-	ldhl	sp,	#3
-	ld	a, (hl)
-	ld	(de), a
+	ld	(hl), #0x02
 ;src/player.c:26: for (int i = 0; i < NUM_BULLETS; i++) {
 	inc	bc
 	jr	00104$
@@ -1317,7 +1326,7 @@ _playerInit::
 ;src/player.c:34: }
 	add	sp, #4
 	ret
-;src/player.c:37: void playerMovement() {
+;src/player.c:37: void playerMovement(void) {
 ;	---------------------------------
 ; Function playerMovement
 ; ---------------------------------
@@ -1334,7 +1343,7 @@ _playerMovement::
 	ld	bc, #_player + 2
 	ld	a, (bc)
 	ld	e, a
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	h, #0x00
 ;	spillPairReg hl
 ;	spillPairReg hl
@@ -1345,7 +1354,7 @@ _playerMovement::
 	add	hl, de
 	ld	e, l
 	ld	d, h
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ldhl	sp,	#0
 	ld	a, (hl+)
 	ld	(de), a
@@ -1430,7 +1439,7 @@ _playerMovement::
 ;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
 	bit	1, e
 	jr	Z, 00121$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	h, #0x00
 ;	spillPairReg hl
 ;	spillPairReg hl
@@ -1445,7 +1454,7 @@ _playerMovement::
 ;src/player.c:44: if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
 	jr	00126$
 00121$:
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	de, #_shadow_OAM+0
 	ld	l, c
 ;	spillPairReg hl
@@ -1465,7 +1474,7 @@ _playerMovement::
 	inc	sp
 	inc	sp
 	ret
-;src/player.c:47: void bulletUpdate() {
+;src/player.c:47: void bulletUpdate(void) {
 ;	---------------------------------
 ; Function bulletUpdate
 ; ---------------------------------
@@ -1615,7 +1624,7 @@ _bulletUpdate::
 	inc	de
 	ld	a, (de)
 	ld	e, a
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	h, #0x00
 ;	spillPairReg hl
 ;	spillPairReg hl
@@ -1626,7 +1635,7 @@ _bulletUpdate::
 	add	hl, de
 	ld	e, l
 	ld	d, h
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ldhl	sp,	#0
 	ld	a, (hl+)
 	ld	(de), a
@@ -1641,7 +1650,7 @@ _bulletUpdate::
 	inc	sp
 	inc	sp
 	ret
-;src/player.c:73: void playerUpdate() { playerMovement(); bulletUpdate(); }
+;src/player.c:73: void playerUpdate(void) { playerMovement(); bulletUpdate(); }
 ;	---------------------------------
 ; Function playerUpdate
 ; ---------------------------------
@@ -1657,7 +1666,7 @@ _scoreDisplay::
 	ld	d, a
 	or	a, a
 	jr	NZ, 00102$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1677,7 +1686,7 @@ _scoreDisplay::
 	ld	a, d
 	dec	a
 	jr	NZ, 00104$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1697,7 +1706,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x02
 	jr	NZ, 00106$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1717,7 +1726,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x03
 	jr	NZ, 00108$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1737,7 +1746,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x04
 	jr	NZ, 00110$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1757,7 +1766,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x05
 	jr	NZ, 00112$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1777,7 +1786,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x06
 	jr	NZ, 00114$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1797,7 +1806,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x07
 	jr	NZ, 00116$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1817,7 +1826,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x08
 	jr	NZ, 00118$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1837,7 +1846,7 @@ _scoreDisplay::
 	ld	a, d
 	sub	a, #0x09
 	jr	NZ, 00120$
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	bc, #_shadow_OAM+0
 	ld	l, e
 ;	spillPairReg hl
@@ -1856,7 +1865,7 @@ _scoreDisplay::
 ;src/score.c:20: move_sprite(id,x,152);
 	ldhl	sp,	#2
 	ld	c, (hl)
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	l, e
 ;	spillPairReg hl
 ;	spillPairReg hl
@@ -1867,7 +1876,7 @@ _scoreDisplay::
 	add	hl, hl
 	ld	de, #_shadow_OAM
 	add	hl, de
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ld	(hl), #0x98
 	inc	hl
 	ld	(hl), c
@@ -1876,7 +1885,7 @@ _scoreDisplay::
 	pop	hl
 	inc	sp
 	jp	(hl)
-;src/score.c:23: void scoreUpdate() {
+;src/score.c:23: void scoreUpdate(void) {
 ;	---------------------------------
 ; Function scoreUpdate
 ; ---------------------------------
@@ -1916,12 +1925,12 @@ _scoreUpdate::
 	ld	e, #0x22
 	ld	a, (#_score1)
 	call	_scoreDisplay
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	hl, #(_shadow_OAM + 142)
 	ld	(hl), #0x64
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	hl, #(_shadow_OAM + 140)
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ld	a, #0x98
 	ld	(hl+), a
 	ld	(hl), #0x30
@@ -1937,7 +1946,7 @@ _scoreUpdate::
 	ld	(hl), a
 ;src/score.c:32: }
 	ret
-;src/score.c:34: void scoreInit() {
+;src/score.c:34: void scoreInit(void) {
 ;	---------------------------------
 ; Function scoreInit
 ; ---------------------------------
@@ -1959,7 +1968,7 @@ _scoreInit::
 	ld	(hl), #0x00
 ;src/score.c:40: }
 	ret
-;src/game.c:10: void bulletCollision() {
+;src/game.c:10: void bulletCollision(void) {
 ;	---------------------------------
 ; Function bulletCollision
 ; ---------------------------------
@@ -2000,13 +2009,13 @@ _bulletCollision::
 	ld	(hl+), a
 	ld	(hl), #0x00
 	ld	a, #0x04
-00157$:
+00173$:
 	ldhl	sp,	#10
 	sla	(hl)
 	inc	hl
 	rl	(hl)
 	dec	a
-	jr	NZ, 00157$
+	jr	NZ, 00173$
 	dec	hl
 	ld	a, (hl+)
 	ld	e, a
@@ -2073,16 +2082,16 @@ _bulletCollision::
 	ld	d, a
 	ld	e, (hl)
 	bit	7, e
-	jr	Z, 00158$
+	jr	Z, 00174$
 	bit	7, d
-	jr	NZ, 00159$
+	jr	NZ, 00175$
 	cp	a, a
-	jr	00159$
-00158$:
+	jr	00175$
+00174$:
 	bit	7, d
-	jr	Z, 00159$
+	jr	Z, 00175$
 	scf
-00159$:
+00175$:
 	jp	C, 00110$
 ;src/game.c:17: bullets[i].x <= skulls[j].x + 8 &&
 	ld	hl, #0x0008
@@ -2099,16 +2108,16 @@ _bulletCollision::
 	ld	d, a
 	ld	e, (hl)
 	bit	7, e
-	jr	Z, 00160$
+	jr	Z, 00176$
 	bit	7, d
-	jr	NZ, 00161$
+	jr	NZ, 00177$
 	cp	a, a
-	jr	00161$
-00160$:
+	jr	00177$
+00176$:
 	bit	7, d
-	jr	Z, 00161$
+	jr	Z, 00177$
 	scf
-00161$:
+00177$:
 	jp	C, 00110$
 ;src/game.c:18: bullets[i].y >= skulls[j].y - 4 && 
 	pop	de
@@ -2166,16 +2175,16 @@ _bulletCollision::
 	ld	d, a
 	ld	e, (hl)
 	bit	7, e
-	jr	Z, 00162$
+	jr	Z, 00178$
 	bit	7, d
-	jr	NZ, 00163$
+	jr	NZ, 00179$
 	cp	a, a
-	jr	00163$
-00162$:
+	jr	00179$
+00178$:
 	bit	7, d
-	jr	Z, 00163$
+	jr	Z, 00179$
 	scf
-00163$:
+00179$:
 	jr	C, 00110$
 ;src/game.c:19: bullets[i].y <= skulls[j].y + 4) {
 	inc	bc
@@ -2192,16 +2201,16 @@ _bulletCollision::
 	ld	d, a
 	ld	e, (hl)
 	bit	7, e
-	jr	Z, 00164$
+	jr	Z, 00180$
 	bit	7, d
-	jr	NZ, 00165$
+	jr	NZ, 00181$
 	cp	a, a
-	jr	00165$
-00164$:
+	jr	00181$
+00180$:
 	bit	7, d
-	jr	Z, 00165$
+	jr	Z, 00181$
 	scf
-00165$:
+00181$:
 	jr	C, 00110$
 ;src/game.c:21: bullets[i].x = 0;
 	pop	hl
@@ -2244,7 +2253,7 @@ _bulletCollision::
 ;src/game.c:29: }
 	add	sp, #14
 	ret
-;src/game.c:31: void playerHurtCollision() {
+;src/game.c:31: void playerHurtCollision(void) {
 ;	---------------------------------
 ; Function playerHurtCollision
 ; ---------------------------------
@@ -2281,7 +2290,7 @@ _playerHurtCollision::
 	ld	a, (hl)
 	or	a, a
 	jp	Z, 00109$
-;src/game.c:36: player.x >= skulls[i].x && 
+;src/game.c:36: player.x >= skulls[i].x     && 
 	ld	a, (bc)
 	ld	e, a
 	ldhl	sp,	#1
@@ -2324,16 +2333,16 @@ _playerHurtCollision::
 	ld	a, (de)
 	ld	d, a
 	bit	7, (hl)
-	jr	Z, 00143$
+	jr	Z, 00155$
 	bit	7, d
-	jr	NZ, 00144$
+	jr	NZ, 00156$
 	cp	a, a
-	jr	00144$
-00143$:
+	jr	00156$
+00155$:
 	bit	7, d
-	jr	Z, 00144$
+	jr	Z, 00156$
 	scf
-00144$:
+00156$:
 	jr	C, 00109$
 ;src/game.c:38: player.y >= skulls[i].y - 4 && 
 	inc	bc
@@ -2369,16 +2378,16 @@ _playerHurtCollision::
 	ld	a, (de)
 	ld	d, a
 	bit	7, (hl)
-	jr	Z, 00145$
+	jr	Z, 00157$
 	bit	7, d
-	jr	NZ, 00146$
+	jr	NZ, 00158$
 	cp	a, a
-	jr	00146$
-00145$:
+	jr	00158$
+00157$:
 	bit	7, d
-	jr	Z, 00146$
+	jr	Z, 00158$
 	scf
-00146$:
+00158$:
 	jr	C, 00109$
 ;src/game.c:39: player.y <= skulls[i].y + 4) {
 	inc	bc
@@ -2394,16 +2403,16 @@ _playerHurtCollision::
 	ld	a, b
 	ld	d, a
 	bit	7, (hl)
-	jr	Z, 00147$
+	jr	Z, 00159$
 	bit	7, d
-	jr	NZ, 00148$
+	jr	NZ, 00160$
 	cp	a, a
-	jr	00148$
-00147$:
+	jr	00160$
+00159$:
 	bit	7, d
-	jr	Z, 00148$
+	jr	Z, 00160$
 	scf
-00148$:
+00160$:
 	jr	C, 00109$
 ;src/game.c:40: score1 ++;
 	ld	hl, #_score1
@@ -2418,7 +2427,7 @@ _playerHurtCollision::
 ;src/game.c:43: }
 	add	sp, #7
 	ret
-;src/game.c:45: void generalUpdate() {
+;src/game.c:45: void generalUpdate(void) {
 ;	---------------------------------
 ; Function generalUpdate
 ; ---------------------------------
@@ -2428,16 +2437,14 @@ _generalUpdate::
 ;src/game.c:47: playerHurtCollision();
 	call	_playerHurtCollision
 ;src/game.c:48: scoreUpdate();
-	call	_scoreUpdate
-;src/game.c:49: wait_vbl_done();
-;src/game.c:50: }
-	jp	_wait_vbl_done
-;src/game.c:52: void level1() {
+;src/game.c:49: }
+	jp	_scoreUpdate
+;src/game.c:51: void level1(void) {
 ;	---------------------------------
 ; Function level1
 ; ---------------------------------
 _level1::
-;src/game.c:56: frame++; if (frame == 60) { seconds++; frame = 0; }
+;src/game.c:55: frame++; if (frame == 60) { seconds++; frame = 0; }
 	ld	hl, #_frame
 	inc	(hl)
 	ld	a, (hl)
@@ -2448,9 +2455,9 @@ _level1::
 	ld	hl, #_frame
 	ld	(hl), #0x00
 00102$:
-;src/game.c:58: playerUpdate();
+;src/game.c:57: playerUpdate();
 	call	_playerUpdate
-;src/game.c:59: for (i = 0; i < 5; i++) { enemyUpdate(&skulls[i]); }
+;src/game.c:58: for (i = 0; i < 5; i++) { enemyUpdate(&skulls[i]); }
 	ld	c, #0x00
 00160$:
 	ld	l, c
@@ -2474,17 +2481,7 @@ _level1::
 	ld	a, c
 	sub	a, #0x05
 	jr	C, 00160$
-;src/game.c:61: enemyInit(&skulls[5], 20, 150,50,SKULL_SPRITE_TILE,1); homingPattern(&skulls[5]);
-	ld	hl, #0x103
-	push	hl
-	ld	hl, #0x3296
-	push	hl
-	ld	a, #0x14
-	ld	de, #(_skulls + 80)
-	call	_enemyInit
-	ld	de, #(_skulls + 80)
-	call	_homingPattern
-;src/game.c:64: if (seconds ==  2 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
+;src/game.c:61: if (seconds ==  2 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x02
 	jr	NZ, 00105$
@@ -2502,7 +2499,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePattern
 00105$:
-;src/game.c:65: if (seconds ==  2 && frame == 20) { enemyInit(&skulls[1], 11, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
+;src/game.c:62: if (seconds ==  2 && frame == 20) { enemyInit(&skulls[1], 11, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x02
 	jr	NZ, 00108$
@@ -2520,7 +2517,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePattern
 00108$:
-;src/game.c:66: if (seconds ==  2 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
+;src/game.c:63: if (seconds ==  2 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x02
 	jr	NZ, 00111$
@@ -2538,7 +2535,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePattern
 00111$:
-;src/game.c:67: if (seconds ==  3 && frame ==  0) { enemyInit(&skulls[3], 13, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
+;src/game.c:64: if (seconds ==  3 && frame ==  0) { enemyInit(&skulls[3], 13, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x03
 	jr	NZ, 00114$
@@ -2556,7 +2553,7 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePattern
 00114$:
-;src/game.c:68: if (seconds ==  3 && frame == 20) { enemyInit(&skulls[4], 14, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[4], 60); }
+;src/game.c:65: if (seconds ==  3 && frame == 20) { enemyInit(&skulls[4], 14, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[4], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x03
 	jr	NZ, 00117$
@@ -2574,7 +2571,7 @@ _level1::
 	ld	de, #(_skulls + 64)
 	call	_squarePattern
 00117$:
-;src/game.c:71: if (seconds ==  8 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
+;src/game.c:68: if (seconds ==  8 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x08
 	jr	NZ, 00120$
@@ -2592,7 +2589,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePatternR
 00120$:
-;src/game.c:72: if (seconds ==  8 && frame == 20) { enemyInit(&skulls[1], 11, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
+;src/game.c:69: if (seconds ==  8 && frame == 20) { enemyInit(&skulls[1], 11, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x08
 	jr	NZ, 00123$
@@ -2610,7 +2607,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePatternR
 00123$:
-;src/game.c:73: if (seconds ==  8 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
+;src/game.c:70: if (seconds ==  8 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x08
 	jr	NZ, 00126$
@@ -2628,7 +2625,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePatternR
 00126$:
-;src/game.c:74: if (seconds ==  9 && frame ==  0) { enemyInit(&skulls[3], 13, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
+;src/game.c:71: if (seconds ==  9 && frame ==  0) { enemyInit(&skulls[3], 13, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x09
 	jr	NZ, 00129$
@@ -2646,7 +2643,7 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePatternR
 00129$:
-;src/game.c:75: if (seconds ==  9 && frame == 20) { enemyInit(&skulls[4], 14, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[4], 60); }
+;src/game.c:72: if (seconds ==  9 && frame == 20) { enemyInit(&skulls[4], 14, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[4], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x09
 	jr	NZ, 00132$
@@ -2664,7 +2661,7 @@ _level1::
 	ld	de, #(_skulls + 64)
 	call	_squarePatternR
 00132$:
-;src/game.c:78: if (seconds == 14 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
+;src/game.c:75: if (seconds == 14 && frame ==  0) { enemyInit(&skulls[0], 10, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0e
 	jr	NZ, 00135$
@@ -2682,7 +2679,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePatternR
 00135$:
-;src/game.c:79: if (seconds == 14 && frame == 20) { enemyInit(&skulls[1], 11, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
+;src/game.c:76: if (seconds == 14 && frame == 20) { enemyInit(&skulls[1], 11, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0e
 	jr	NZ, 00138$
@@ -2700,7 +2697,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePattern
 00138$:
-;src/game.c:80: if (seconds == 14 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
+;src/game.c:77: if (seconds == 14 && frame == 40) {	enemyInit(&skulls[2], 12, 170, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0e
 	jr	NZ, 00141$
@@ -2718,7 +2715,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePatternR
 00141$:
-;src/game.c:81: if (seconds == 15 && frame ==  0) { enemyInit(&skulls[3], 13, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
+;src/game.c:78: if (seconds == 15 && frame ==  0) { enemyInit(&skulls[3], 13, 190,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x0f
 	jr	NZ, 00144$
@@ -2736,7 +2733,7 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePattern
 00144$:
-;src/game.c:84: if (seconds == 20 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
+;src/game.c:81: if (seconds == 20 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x14
 	jr	NZ, 00147$
@@ -2754,7 +2751,7 @@ _level1::
 	ld	de, #_skulls
 	call	_squarePattern
 00147$:
-;src/game.c:85: if (seconds == 20 && frame == 20) { enemyInit(&skulls[1], 11, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
+;src/game.c:82: if (seconds == 20 && frame == 20) { enemyInit(&skulls[1], 11, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[1], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x14
 	jr	NZ, 00150$
@@ -2772,7 +2769,7 @@ _level1::
 	ld	de, #(_skulls + 16)
 	call	_squarePatternR
 00150$:
-;src/game.c:86: if (seconds == 20 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
+;src/game.c:83: if (seconds == 20 && frame == 40) {	enemyInit(&skulls[2], 12, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[2], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x14
 	jr	NZ, 00153$
@@ -2790,7 +2787,7 @@ _level1::
 	ld	de, #(_skulls + 32)
 	call	_squarePattern
 00153$:
-;src/game.c:87: if (seconds == 21 && frame ==  0) { enemyInit(&skulls[3], 13, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
+;src/game.c:84: if (seconds == 21 && frame ==  0) { enemyInit(&skulls[3], 13, 190, 110, SKULL_SPRITE_TILE,1); squarePatternR(&skulls[3], 60); }
 	ld	a, (#_seconds)
 	sub	a, #0x15
 	jr	NZ, 00156$
@@ -2808,74 +2805,83 @@ _level1::
 	ld	de, #(_skulls + 48)
 	call	_squarePatternR
 00156$:
-;src/game.c:89: if (seconds == 25) { seconds = 0; }
+;src/game.c:86: if (seconds == 25) { seconds = 0; }
 	ld	a, (#_seconds)
 	sub	a, #0x19
 	ret	NZ
 	ld	hl, #_seconds
 	ld	(hl), #0x00
-;src/game.c:90: }
+;src/game.c:87: }
 	ret
-;src/game.c:92: uint8_t game() {
+;src/game.c:89: uint8_t game(void) {
 ;	---------------------------------
 ; Function game
 ; ---------------------------------
 _game::
-;src/game.c:96: scoreInit();
+;src/game.c:93: scoreInit();
 	call	_scoreInit
-;src/game.c:97: playerInit();
+;src/game.c:94: playerInit();
 	call	_playerInit
-;src/game.c:98: seconds = 0;
+;src/game.c:95: seconds = 0;
 	ld	hl, #_seconds
 	ld	(hl), #0x00
-;src/game.c:99: frame = 0;
+;src/game.c:96: frame = 0;
 	ld	hl, #_frame
 	ld	(hl), #0x00
-;src/game.c:101: level1_bkg_init();
+;src/game.c:98: level1_bkg_init();
 	call	_level1_bkg_init
-;src/game.c:103: while(currentlevel = 1) {
+;src/game.c:100: while(currentlevel = 1) {
 00101$:
-;src/game.c:104: generalUpdate();
+;src/game.c:101: generalUpdate();
 	call	_generalUpdate
-;src/game.c:105: level1();
+;src/game.c:102: level1();
 	call	_level1
-;src/game.c:106: level1_bkg_update();
+;src/game.c:103: level1_bkg_update();
 	call	_level1_bkg_update
-;src/game.c:116: }
+;src/game.c:113: }
 	jr	00101$
-;src/main.c:12: void main() {
+;src/main.c:11: void startup(void) {
 ;	---------------------------------
-; Function main
+; Function startup
 ; ---------------------------------
-_main::
-;src/main.c:14: SHOW_BKG;
+_startup::
+;src/main.c:12: SHOW_BKG;
 	ldh	a, (_LCDC_REG + 0)
 	or	a, #0x01
 	ldh	(_LCDC_REG + 0), a
-;src/main.c:15: SHOW_SPRITES;
+;src/main.c:13: SHOW_SPRITES;
 	ldh	a, (_LCDC_REG + 0)
 	or	a, #0x02
 	ldh	(_LCDC_REG + 0), a
-;src/main.c:16: DISPLAY_ON;	
+;src/main.c:14: DISPLAY_ON;
 	ldh	a, (_LCDC_REG + 0)
 	or	a, #0x80
 	ldh	(_LCDC_REG + 0), a
-;src/main.c:17: set_sprite_data ( 0, 128, sprites);
+;src/main.c:15: vsync();
+	call	_vsync
+;src/main.c:16: set_sprite_data ( 0 , 128 , sprites );
 	ld	de, #_sprites
 	push	de
 	ld	hl, #0x8000
 	push	hl
 	call	_set_sprite_data
 	add	sp, #4
-;src/main.c:18: scoreInit();
-	call	_scoreInit
-;src/main.c:21: state       = 0;
+;src/main.c:17: }
+	ret
+;src/main.c:19: void main(void) {
+;	---------------------------------
+; Function main
+; ---------------------------------
+_main::
+;src/main.c:20: startup();
+	call	_startup
+;src/main.c:22: state       = 0;
 	ld	hl, #_state
 	ld	(hl), #0x00
-;src/main.c:22: selection   = 1;
+;src/main.c:23: selection   = 1;
 	ld	hl, #_selection
 	ld	(hl), #0x01
-;src/main.c:23: set_bkg_tiles   ( 0 , 0, 20, 18 , titleScreen);
+;src/main.c:24: set_bkg_tiles   ( 0 , 0, 20, 18 , titleScreen);
 	ld	de, #_titleScreen
 	push	de
 	ld	hl, #0x1214
@@ -2885,60 +2891,60 @@ _main::
 	push	af
 	call	_set_bkg_tiles
 	add	sp, #6
-;src/main.c:24: set_bkg_data    ( 0 , 127, titleSprites);
+;src/main.c:25: set_bkg_data    ( 0 , 127, titleSprites);
 	ld	de, #_titleSprites
 	push	de
 	ld	hl, #0x7f00
 	push	hl
 	call	_set_bkg_data
 	add	sp, #4
-;c:/gbdk/include/gb/gb.h:1602: shadow_OAM[nb].tile=tile;
+;c:\gbdk\include\gb\gb.h:1804: shadow_OAM[nb].tile=tile;
 	ld	hl, #(_shadow_OAM + 2)
 	ld	(hl), #0x01
-;src/main.c:28: while(state == 0) {
+;src/main.c:29: while(state == 0) {
 00117$:
 	ld	a, (#_state)
 	or	a, a
 	jr	NZ, 00120$
-;src/main.c:37: if (joypad() & J_DOWN)  { selection ++; }
+;src/main.c:38: if (joypad() & J_DOWN)  { selection ++; }
 	call	_joypad
 	bit	3, a
 	jr	Z, 00102$
 	ld	hl, #_selection
 	inc	(hl)
 00102$:
-;src/main.c:38: if (joypad() & J_UP  )  { selection --; }
+;src/main.c:39: if (joypad() & J_UP  )  { selection --; }
 	call	_joypad
 	bit	2, a
 	jr	Z, 00104$
 	ld	hl, #_selection
 	dec	(hl)
 00104$:
-;src/main.c:41: if (selection == 0)     { selection = 1;}
+;src/main.c:42: if (selection == 0)     { selection = 1;}
 	ld	hl, #_selection
 	ld	a, (hl)
 	or	a, a
 	jr	NZ, 00106$
 	ld	(hl), #0x01
 00106$:
-;src/main.c:42: if (selection == 4)     { selection = 3;}
+;src/main.c:43: if (selection == 4)     { selection = 3;}
 	ld	a, (#_selection)
 	sub	a, #0x04
 	jr	NZ, 00108$
 	ld	hl, #_selection
 	ld	(hl), #0x03
 00108$:
-;src/main.c:45: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
+;src/main.c:46: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
 	ld	a, (#_selection)
 	dec	a
 	jr	NZ, 00112$
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	hl, #_shadow_OAM
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ld	(hl), #0x70
 	inc	hl
 	ld	(hl), #0x64
-;src/main.c:45: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
+;src/main.c:46: if (selection == 1) { move_sprite (0, 100, 112); if (joypad() & J_A) { state = 1; break; } }
 	call	_joypad
 	bit	4, a
 	jr	Z, 00112$
@@ -2946,44 +2952,44 @@ _main::
 	ld	(hl), #0x01
 	jr	00120$
 00112$:
-;src/main.c:46: if (selection == 2) { move_sprite (0, 100, 128); }
+;src/main.c:47: if (selection == 2) { move_sprite (0, 100, 128); }
 	ld	a, (#_selection)
 	sub	a, #0x02
 	jr	NZ, 00114$
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	hl, #_shadow_OAM
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ld	a, #0x80
 	ld	(hl+), a
 	ld	(hl), #0x64
-;src/main.c:46: if (selection == 2) { move_sprite (0, 100, 128); }
+;src/main.c:47: if (selection == 2) { move_sprite (0, 100, 128); }
 00114$:
-;src/main.c:47: if (selection == 3) { move_sprite (0, 100, 144); }
+;src/main.c:48: if (selection == 3) { move_sprite (0, 100, 144); }
 	ld	a, (#_selection)
 	sub	a, #0x03
 	jr	NZ, 00116$
-;c:/gbdk/include/gb/gb.h:1675: OAM_item_t * itm = &shadow_OAM[nb];
+;c:\gbdk\include\gb\gb.h:1877: OAM_item_t * itm = &shadow_OAM[nb];
 	ld	hl, #_shadow_OAM
-;c:/gbdk/include/gb/gb.h:1676: itm->y=y, itm->x=x;
+;c:\gbdk\include\gb\gb.h:1878: itm->y=y, itm->x=x;
 	ld	a, #0x90
 	ld	(hl+), a
 	ld	(hl), #0x64
-;src/main.c:47: if (selection == 3) { move_sprite (0, 100, 144); }
+;src/main.c:48: if (selection == 3) { move_sprite (0, 100, 144); }
 00116$:
-;src/main.c:50: delay(200);
+;src/main.c:51: delay(200);
 	ld	de, #0x00c8
 	call	_delay
 	jr	00117$
-;src/main.c:54: while (state == 1) { 
+;src/main.c:55: while (state == 1) { 
 00120$:
 	ld	a, (#_state)
 	dec	a
 	ret	NZ
-;src/main.c:55: scoreUpdate();
+;src/main.c:56: scoreUpdate();
 	call	_scoreUpdate
-;src/main.c:56: game(); 
+;src/main.c:57: game(); 
 	call	_game
-;src/main.c:61: }
+;src/main.c:62: }
 	jr	00120$
 	.area _CODE
 	.area _INITIALIZER

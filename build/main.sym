@@ -17,47 +17,47 @@ Symbol Table
   7 __xinit__sprites                                               000F58 R
   7 __xinit__titleScreen                                           0005F0 R
   7 __xinit__titleSprites                                          000758 R
-  0 _activateEnemy                                                 000180 GR
+  0 _activateEnemy                                                 00017A GR
     _add_LCD                                                       ****** GX
   1 _background_offset_1                                           000001 GR
   1 _background_offset_2                                           000002 GR
   1 _background_offset_3                                           000003 GR
-  0 _bulletCollision                                               000797 GR
-  0 _bulletUpdate                                                  000594 GR
+  0 _bulletCollision                                               000799 GR
+  0 _bulletUpdate                                                  000596 GR
   1 _bullets                                                       00014A GR
   1 _currentBullet                                                 000144 GR
-  0 _deactivateEnemy                                               000187 GR
+  0 _deactivateEnemy                                               000181 GR
     _delay                                                         ****** GX
-  0 _enemyInit                                                     0001B3 GR
-  0 _enemyUpdate                                                   000203 GR
+  0 _enemyInit                                                     0001AD GR
+  0 _enemyUpdate                                                   0001FB GR
   1 _frame                                                         00015F GR
-  0 _game                                                          000CDA GR
-  0 _generalUpdate                                                 0009D9 GR
-  0 _goToNode                                                      00018E GR
-  0 _homingPattern                                                 0002F1 GR
+  0 _game                                                          000CC3 GR
+  0 _generalUpdate                                                 0009DB GR
+  0 _goToNode                                                      000188 GR
+  0 _homingPattern                                                 0002E9 GR
   0 _interruptLCD                                                  000000 GR
     _joypad                                                        ****** GX
-  0 _level1                                                        0009E5 GR
+  0 _level1                                                        0009E4 GR
   0 _level1_bkg_init                                               000104 GR
-  0 _level1_bkg_update                                             000148 GR
+  0 _level1_bkg_update                                             000142 GR
   2 _level1_map                                                    000000 GR
   0 _level1_tiles                                                  000034 GR
-  0 _main                                                          000CF8 GR
-  0 _moveEnemy                                                     000168 GR
+  0 _main                                                          000D04 GR
+  0 _moveEnemy                                                     000162 GR
   1 _player                                                        000146 GR
-  0 _playerHurtCollision                                           0008FD GR
-  0 _playerInit                                                    000446 GR
-  0 _playerMovement                                                0004D2 GR
-  0 _playerUpdate                                                  000657 GR
+  0 _playerHurtCollision                                           0008FF GR
+  0 _playerInit                                                    000450 GR
+  0 _playerMovement                                                0004D4 GR
+  0 _playerUpdate                                                  000659 GR
   1 _reload                                                        000145 GR
   1 _score1                                                        000159 GR
   1 _score10                                                       00015A GR
   1 _score100                                                      00015B GR
   1 _score1000                                                     00015C GR
   1 _score10000                                                    00015D GR
-  0 _scoreDisplay                                                  00065D GR
-  0 _scoreInit                                                     00077D GR
-  0 _scoreUpdate                                                   000722 GR
+  0 _scoreDisplay                                                  00065F GR
+  0 _scoreInit                                                     00077F GR
+  0 _scoreUpdate                                                   000724 GR
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy)                  Page 2
 Hexadecimal [24-Bits]
 
@@ -72,21 +72,21 @@ Symbol Table
     _shadow_OAM                                                    ****** GX
   1 _skulls                                                        000004 GR
   2 _sprites                                                       000F58 GR
-  0 _squarePattern                                                 000300 GR
-  0 _squarePatternR                                                0003A3 GR
+  0 _squarePattern                                                 0002F8 GR
+  0 _squarePatternR                                                0003A4 GR
+  0 _startup                                                       000CE1 GR
   1 _state                                                         000160 GR
   1 _timer                                                         000000 GR
   2 _titleScreen                                                   0005F0 GR
   2 _titleSprites                                                  000758 GR
-    _wait_vbl_done                                                 ****** GX
-
+    _vsync                                                         ****** GX
 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (GameBoy)                  Page 3
 Hexadecimal [24-Bits]
 
 Area Table
 
-   0 _CODE                                      size    DC6   flags    0
+   0 _CODE                                      size    DB3   flags    0
    1 _DATA                                      size    162   flags    0
    2 _INITIALIZED                               size   1758   flags    0
    3 _DABS                                      size      0   flags    8

@@ -1,23 +1,24 @@
 #include <gb/gb.h>
-
 #include "game.c"
 #include "tilemaps/titleScreen.c"
 #include "tilesets/titleSprites.c"
 #include "tilesets/sprites.c"
 
-
 uint8_t state,
         selection;
 
-void main() {
-    // Startup (general)
+// Technical Setup
+void startup(void) {
     SHOW_BKG;
     SHOW_SPRITES;
-    DISPLAY_ON;	
-    set_sprite_data ( 0, 128, sprites);
-    scoreInit();
+    DISPLAY_ON;
+    vsync();
+    set_sprite_data ( 0 , 128 , sprites );
+}
 
-    // Startup (main menu)
+void main(void) {
+    startup();
+
     state       = 0;
     selection   = 1;
     set_bkg_tiles   ( 0 , 0, 20, 18 , titleScreen);

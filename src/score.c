@@ -20,7 +20,7 @@ void scoreDisplay(uint8_t s, uint8_t id, uint8_t x) {
     move_sprite(id,x,152);
 }
 
-void scoreUpdate() {
+void scoreUpdate(void) {
     scoreDisplay(score10000, 30,  8);
     scoreDisplay(score1000,  31, 16);
     scoreDisplay(score100,   32, 24);
@@ -31,7 +31,7 @@ void scoreUpdate() {
     if (score1 >= 10) { score10 ++; score1 -= 10;}
 }
 
-void scoreInit() {
+void scoreInit(void) {
     score10000 = 0;
     score1000  = 0;
     score100   = 0;

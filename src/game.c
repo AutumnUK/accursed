@@ -7,7 +7,7 @@
 uint8_t seconds, 
         frame;
 
-void bulletCollision() {
+void bulletCollision(void) {
     uint8_t i, 
             j;
     for ( i = 0; i < NUM_BULLETS; i++) {
@@ -28,12 +28,12 @@ void bulletCollision() {
     }
 }
 
-void playerHurtCollision() {
+void playerHurtCollision(void) {
     uint8_t i;
 
     for ( i = 0; i < ENEMY_COUNT; i++ ) {
         if (skulls[i].active && 
-            player.x >= skulls[i].x && 
+            player.x >= skulls[i].x     && 
             player.x <= skulls[i].x - 8 &&
             player.y >= skulls[i].y - 4 && 
             player.y <= skulls[i].y + 4) {
@@ -42,14 +42,13 @@ void playerHurtCollision() {
     }
 }
 
-void generalUpdate() {
-        bulletCollision();
+void generalUpdate(void) {
+    bulletCollision();
     playerHurtCollision();
     scoreUpdate();
-    wait_vbl_done();
 }
 
-void level1() {
+void level1(void) {
     uint8_t i;
 
     // Clock.
@@ -58,8 +57,6 @@ void level1() {
 	playerUpdate();
     for (i = 0; i < 5; i++) { enemyUpdate(&skulls[i]); }
 	
-    enemyInit(&skulls[5], 20, 150,50,SKULL_SPRITE_TILE,1); homingPattern(&skulls[5]);
-
 	// Wave 1
 	if (seconds ==  2 && frame ==  0) { enemyInit(&skulls[0], 10, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[0], 60); }
 	if (seconds ==  2 && frame == 20) { enemyInit(&skulls[1], 11, 170,  50, SKULL_SPRITE_TILE,1);  squarePattern(&skulls[1], 60); }
@@ -89,7 +86,7 @@ void level1() {
 	if (seconds == 25) { seconds = 0; }
 }
 
-uint8_t game() {
+uint8_t game(void) {
     uint8_t currentlevel; 
 
     currentlevel = 1;

@@ -7,7 +7,7 @@ uint8_t timer,
         background_offset_2,
         background_offset_3;
 
-void interruptLCD() {
+void interruptLCD(void) {
     switch (LYC_REG) {
 		case 0x00: move_bkg(background_offset_1,0); LYC_REG = 0x68; break;
 		case 0x68: move_bkg(background_offset_2,0); LYC_REG = 0x70; break;
@@ -15,7 +15,7 @@ void interruptLCD() {
     }
 }
 
-void level1_bkg_init() {
+void level1_bkg_init(void) {
     timer = 0;
     set_bkg_tiles(0,0,80,18,level1_map);       // Sets the map.
     set_bkg_data(0,13,level1_tiles);            // Sets the tileset.
@@ -28,7 +28,7 @@ void level1_bkg_init() {
     SHOW_BKG;
 }
 
-void level1_bkg_update() {
+void level1_bkg_update(void) {
     timer++;
         if (timer == 2) {
             background_offset_1 += 1;

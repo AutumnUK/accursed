@@ -35,10 +35,6 @@ void enemyInit(struct Enemy * m, uint8_t id, uint8_t x, uint8_t y, uint8_t sprit
     set_sprite_tile(m -> id , sprite);
 }
 
-void skullInit(struct Enemy * m) {
-
-
-}
 void enemyUpdate(struct Enemy * m) {
 
 	if ( m -> active) { 

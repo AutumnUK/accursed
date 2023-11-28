@@ -15,7 +15,7 @@ struct  Player          player;
 
 struct  PlayerBullet    bullets[NUM_BULLETS];
 
-void playerInit() {
+void playerInit(void) {
     reload          =   0;
     player.x        =  50;
     player.y        =  50;
@@ -34,7 +34,7 @@ void playerInit() {
 }
 
 // Each frame checks for input then relocates the player.
-void playerMovement() {
+void playerMovement(void) {
     move_sprite( player.id , player.x , player.y );
     if (joypad() & J_UP   ) { player.y -- ; if ( player.y < MIN_Y ) { player.y = MIN_Y; } }
     if (joypad() & J_DOWN ) { player.y ++ ; if ( player.y > MAX_Y ) { player.y = MAX_Y; } }
@@ -44,7 +44,7 @@ void playerMovement() {
     if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
 }
 
-void bulletUpdate() {
+void bulletUpdate(void) {
     // count down to next shot
     if (reload > 0) { reload --; }
     // If player is shooting and timer == 0.
@@ -70,4 +70,4 @@ void bulletUpdate() {
     }
 }
 
-void playerUpdate() { playerMovement(); bulletUpdate(); }
+void playerUpdate(void) { playerMovement(); bulletUpdate(); }
