@@ -22,6 +22,6 @@
 #define titleScreenHeight 18
 #define titleScreenBank 0
 
-extern unsigned char titleScreen[];
+extern unsigned char menuScreen[];
 
 /* End of TITLESCREEN.H */
