@@ -20,6 +20,7 @@ Tools/GBDK/bin/lcc -o  Build/game.gb \
     src/*.c \
     src/menu/*.c \
     src/generics/*.c \
+    src/stage_1/*c \
     -Wall
 
 
