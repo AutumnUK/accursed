@@ -1,7 +1,4 @@
-#include <gb/gb.h>
-#include "menu_map.h"
-#include "menu_sprites.h"
-#include "../generics/sprites.h"
+#include "../headers.h"
 
 
 
