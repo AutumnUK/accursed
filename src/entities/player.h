@@ -4,8 +4,8 @@
 #include "../headers.h"
 
 struct Player {
-    uint8_t x;
-    uint8_t y;
+    int x;
+    int y;
     uint8_t id;
     BOOLEAN shooting;
 };
@@ -22,5 +22,5 @@ struct PlayerBullet {
 };
 
 void player_init( void );
-void player_move(uint8_t dir);
+void player_movement( void );
 #endif

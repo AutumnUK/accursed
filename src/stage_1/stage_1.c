@@ -43,8 +43,6 @@ void stage_1( void ) {
     player_init();
     while (1) {
         stage_1_bkg_update();
-        if (joypad() & J_RIGHT) {
-            player_move(1);
-        }
+        player_movement();
     }
 }
