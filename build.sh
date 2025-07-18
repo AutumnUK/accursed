@@ -21,6 +21,7 @@ Tools/GBDK/bin/lcc -o  Build/game.gb \
     src/menu/*.c \
     src/generics/*.c \
     src/stage_1/*c \
+    src/entities/*c \
     -Wall
 
 

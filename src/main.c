@@ -9,7 +9,7 @@ void main(void) {
     switch ( x ) {
         case 1 : 
             
-            stage_1_bkg_init();
+            stage_1();
             x = 0;
             break;
     }

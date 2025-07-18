@@ -1,9 +1,11 @@
 #include "../headers.h"
+uint8_t background_offset_1;
+uint8_t background_offset_2;
+uint8_t background_offset_3;
 
-uint8_t background_offset_1,
-        background_offset_2,
-        background_offset_3;
+uint8_t timer = 0;
 
+// Does this set the heights?
 void interruptLCD(void) {
     switch (LYC_REG) {
 		case 0x00: move_bkg(background_offset_1,0); LYC_REG = 0x68; break;
@@ -24,7 +26,7 @@ void stage_1_bkg_update(void) {
 }
 
 void stage_1_bkg_init(void) {
-    uint8_t timer = 0;
+    
     set_bkg_tiles(0,0,80,18,stage_1_map);      
     set_bkg_data(0,13,stage_1_tiles);            
     STAT_REG = 0x45;
@@ -34,8 +36,12 @@ void stage_1_bkg_init(void) {
     enable_interrupts();
     set_interrupts(VBL_IFLAG | LCD_IFLAG);
     SHOW_BKG;
-    while(1) {
+}
+
+void stage_1( void ) {
+    stage_1_bkg_init();
+    player_init();
+    while (1) {
         stage_1_bkg_update();
     }
 }
-

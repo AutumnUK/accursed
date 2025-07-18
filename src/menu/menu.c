@@ -1,6 +1,6 @@
 #include "../headers.h"
 
-
+// TODO : Custom input wrapper/library.
 
 uint8_t main_menu( void ){
     uint8_t selection       = 1;
@@ -20,7 +20,7 @@ uint8_t main_menu( void ){
         vsync();
         if (joypad() & J_A) { a_press = 1; a_pressed = 1; }
         else { a_press = 0; }
-        if (a_press == 0 && a_pressed == 1) { return selection; }
+        if (a_press == 0 && a_pressed == 1) { move_sprite (0 , 200, 200); return selection; }
         
         if (joypad() & J_DOWN) { down_press = 1; down_pressed = 1; }
         else { down_press = 0; }

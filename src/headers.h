@@ -11,3 +11,6 @@
 #include "stage_1/stage_1_map.h"
 #include "stage_1/stage_1_tiles.h"
 
+#include "entities/player.h"
+
+
