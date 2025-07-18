@@ -22,4 +22,5 @@ struct PlayerBullet {
 };
 
 void player_init( void );
+void player_move(uint8_t dir);
 #endif

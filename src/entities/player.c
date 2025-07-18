@@ -16,3 +16,13 @@ void player_init(void) {
     move_sprite( player.id , player.x , player.y );
     set_sprite_tile(player.id,1);
 }
+
+void player_move(uint8_t dir) {
+    move_sprite( player.id , player.x , player.y );
+    if ( dir == 1 ) {
+        player.x += 1;
+        
+    }
+    // move in all directions based on number
+    // how do I normalise inputs?
+}
