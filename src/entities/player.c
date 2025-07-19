@@ -13,6 +13,9 @@
 
 int x = 0;
 int y = 0;
+int v[2] = { 0 , 0 };
+
+int player_speed = SPEED;
 
 struct Player player;
 
@@ -27,22 +30,48 @@ void player_init(void) {
 
 
 
-
 void player_movement(void) {
     move_sprite( player.id , player.x / FP_SCALE , player.y / FP_SCALE );
-    // replace this with a function that returns a value if I press an input/combination of inputs.
-    switch (joypad()) {
-        case J_UP:      player.y -= SPEED; break;
-        case J_UP && J_RIGHT: player.y -= NORM_SPEED; break;
-        case J_DOWN:    player.y += SPEED; break;
-        case J_RIGHT:   player.x += SPEED; break;
-        case J_LEFT:    player.x -= SPEED; break;
+
+    if (joypad() & J_UP) { y = -1; }
+    else if (joypad() & J_DOWN ) { y = 1; }
+    else { y = 0; }
+    
+    if (joypad() & J_LEFT) { x = -1;}
+    else if (joypad() & J_RIGHT ) { x = 1; }
+    else { x = 0; }
+
+    v[0] = y;
+    v[1] = x;
+
+    if (v[0] == -1 && v[1] == 0) {
+        // UP
+        player_speed = SPEED;
+    } else if (v[0] == -1 && v[1] == 1) {
+        // UP-RIGHT
+        player_speed = NORM_SPEED;
+    } else if (v[0] == 0 && v[1] == 1) {
+        // RIGHT
+        player_speed = SPEED;
+    } else if (v[0] == 1 && v[1] == 1) {
+        // DOWN-RIGHT
+        player_speed = NORM_SPEED;
+    } else if (v[0] == 1 && v[1] == 0) {
+        // DOWN
+        player_speed = SPEED;
+    } else if (v[0] == 1 && v[1] == -1) {
+        // DOWN-LEFT
+        player_speed = NORM_SPEED;
+    } else if (v[0] == 0 && v[1] == -1) {
+        // LEFT
+        player_speed = SPEED;
+    } else if (v[0] == -1 && v[1] == -1) {
+        // UP-LEFT
+        player_speed = NORM_SPEED;
     }
 
-    
 
-
-    player.x += x;
-    player.y += y;
+    player.y += v[0] * player_speed;
+    player.x += v[1] * player_speed;
 
 }
