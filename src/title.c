@@ -1,3 +1,4 @@
+#include    "../Tools/GBDK/include/gb/gb.h"
 // Tiles
 unsigned char title_tiles[] = {
   0x00,0x80,0x80,0xE0,0x80,0xFF,0x40,0x7F,
@@ -216,7 +217,7 @@ unsigned char title_tiles[] = {
 #define         titleScreenWidth    20
 #define         titleScreenHeight   18
 #define         titleScreenBank      0
-unsigned char titleScreen[] = {
+unsigned char   titleScreen[] = {
   0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,
   0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,0x7F,
   0x7F,0x7F,0x7F,0x7F,0x5B,0x5A,0x5A,0x5A,0x5A,0x5A,
@@ -256,7 +257,7 @@ unsigned char titleScreen[] = {
 };
 
 // Torch selector
-unsigned char title_selector[] = {
+unsigned char   title_selector[] = {
   0x30,0x00,0x08,0x10,0x08,0x30,0x6C,0x7C,
   0x38,0x38,0x38,0x38,0x10,0x10,0x10,0x10,
   0x10,0x00,0x10,0x20,0x08,0x30,0x6C,0x7C,
@@ -264,3 +265,47 @@ unsigned char title_selector[] = {
   0x10,0x00,0x30,0x00,0x18,0x20,0x6C,0x7C,
   0x38,0x38,0x38,0x38,0x10,0x10,0x10,0x10
 };
+
+uint8_t main_menu(void) {
+  set_bkg_tiles(0,0,20,18,titleScreen);
+  set_bkg_data(0,120,title_tiles);
+ 
+  set_sprite_data(0,3,title_selector);
+
+    uint8_t     frames      = 0;
+    uint8_t     selection	= 1;
+
+    while (1) {
+        vsync();
+        
+        frames ++;
+        if ( frames == 1  ) { set_sprite_tile(0 , 0); }
+        if ( frames == 14 ) { set_sprite_tile(0 , 1); }
+        if ( frames == 28 ) { set_sprite_tile(0 , 2); }
+        if ( frames >  42 ) { frames = 0;             }
+        
+        if ( selection <= 0) { selection = 3; }
+
+        if ( selection == 1) { move_sprite( 0 , 64 ,  96 ); }
+		if ( selection == 1 && joypad() & J_A) { return 1; }
+
+        if ( selection == 2) { move_sprite( 0 , 64 , 112 ); }
+		if ( selection == 2 && joypad() & J_A) { return 2; }
+
+        if ( selection == 3) { move_sprite( 0 , 64 , 128 ); }
+		if ( selection == 3 && joypad() & J_A) { return 3; }
+
+        if ( selection >= 4) { selection = 1; }
+
+        if (joypad() & J_UP) { 
+            selection --; 
+            delay(200); 
+        }
+        
+        if (joypad() & J_DOWN) { 
+            selection ++; 
+            delay(200); 
+        }
+  
+    }
+}

@@ -1,0 +1,1 @@
+- Update main menu to allow for proper on release input.
