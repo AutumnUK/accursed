@@ -1,5 +1,5 @@
 #include    "../Tools/GBDK/include/gb/gb.h"
-
+#include    "player.h"
 // Tiles
 const unsigned char level_1_tiles[] = {
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -228,8 +228,10 @@ void level_1_bkg_update(void) {
 
 int game(void) {
     level_1_bkg_init();
+    playerInit();
     while(1) {
         vsync();
+        playerUpdate();
         level_1_bkg_update();
     }
 }

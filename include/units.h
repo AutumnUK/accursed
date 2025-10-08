@@ -24,20 +24,5 @@ struct Enemy {
     struct 	Node node[NODES];
 };
 
-struct Player {
-    uint8_t x,
-            y,
-            id;
-    BOOLEAN shooting;
-};
 
-struct PlayerBullet {
-    uint8_t x,
-            y,
-            id,
-            tile;
-
-    BOOLEAN ready;
-    
-};
 #endif

@@ -1,18 +1,35 @@
-#include <gb/gb.h>
-#include "../include/units.h"
+#include    "../Tools/GBDK/include/gb/gb.h"
 
-#define RELOAD      20
-#define MIN_X       8
-#define MAX_X       160
-#define MIN_Y       16
-#define MAX_Y       136
-#define NUM_BULLETS 3
+#define     RELOAD      20
+#define     MIN_X       8
+#define     MAX_X       160
+#define     MIN_Y       16
+#define     MAX_Y       136
+#define     NUM_BULLETS 3
+#define     SPEED       1
+#define     NORM_SPEED  256 / 170
 
-        uint8_t         currentBullet,
-                        reload;
+struct Player {
+    int x;
+    int y;
+    int id;
+    int shooting;
+
+};
+
+struct PlayerBullet {
+    uint8_t x,
+            y,
+            id,
+            tile;
+
+    BOOLEAN ready;
+    
+};
+
+uint8_t currentBullet, reload;
 
 struct  Player          player;
-
 struct  PlayerBullet    bullets[NUM_BULLETS];
 
 void playerInit(void) {
@@ -33,21 +50,36 @@ void playerInit(void) {
     }
 }
 
-// Each frame checks for input then relocates the player.
 void playerMovement(void) {
-    move_sprite( player.id , player.x , player.y );
-    if (joypad() & J_UP   ) { player.y -- ; if ( player.y < MIN_Y ) { player.y = MIN_Y; } }
-    if (joypad() & J_DOWN ) { player.y ++ ; if ( player.y > MAX_Y ) { player.y = MAX_Y; } }
-    if (joypad() & J_LEFT ) { player.x -- ; if ( player.x < MIN_X ) { player.x = MIN_X; } }
-    if (joypad() & J_RIGHT) { player.x ++ ; if ( player.x > MAX_X ) { player.x = MAX_X; } }
+    move_sprite( player.id , player.x, player.y);
+    int moving_right = 0;
+    int moving_up = 0;
+    int moving_left = 0;
+
+    if (joypad() & J_RIGHT) { moving_right = 1; } else { moving_right = 0;}
+    if (joypad() & J_LEFT) { moving_left = 1;} else { moving_left = 0;}
+    if (joypad() & J_UP) { moving_up = 1; } else {moving_up = 0;}
+
+    if (moving_right == 1) {
+        player.x += SPEED;
+    }
+
+    if (moving_right == 1 && moving_up == 1) {
+        player.x += NORM_SPEED;
+        player.y -= NORM_SPEED;
+    }
+    if (moving_left == 1) {
+        player.x -= SPEED;
+    }
+
+    
+
     if (joypad() & J_A    ) { player.shooting = TRUE; } else { player.shooting = FALSE; } 
     if (joypad() & J_LEFT   ) { set_sprite_tile(player.id,0);} else { set_sprite_tile(player.id,1);}
 }
 
 void bulletUpdate(void) {
-    // count down to next shot
     if (reload > 0) { reload --; }
-    // If player is shooting and timer == 0.
     if (player.shooting && reload == 0) {
         for (int i = 0; i < NUM_BULLETS; i++) {
             if (currentBullet == i + 1) {
@@ -61,7 +93,6 @@ void bulletUpdate(void) {
         }
     }
 
-    // Hide the bullet.
     for (int i = 0; i < NUM_BULLETS; i++) {
         if (bullets[i].x >= MAX_X) { bullets[i].x = 200; bullets[i].ready = TRUE; }
 
