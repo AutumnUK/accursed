@@ -16,17 +16,13 @@ rm      -rf Build/*
 # Compile build files.
 echo "Building game"
 echo ""
-#Tools/GBDK/bin/lcc -o Build/game.gb src/*.c -Wall
-Tools/GBDK/bin/lcc -o Build/game.gb src/main.c -Wall
-
+Tools/GBDK/bin/lcc -o Build/game.gb src/*.c -Wall
 
 # Run the game? (errors out if file didn't compile)
 if [ -f Build/game.gb ]; then
     echo ""
     echo -e "Build complete"
     
-
-
     read -n1 -p "Run the game? (y/n): " answer
     echo ""
     echo ""
